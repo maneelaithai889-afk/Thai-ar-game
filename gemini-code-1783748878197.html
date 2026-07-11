@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>เกมฟาร์มบาลี-สันสกฤต (ฉบับปรับปรุงใหม่)</title>
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;700&display=swap');
+        
+        * {
+            box-sizing: border-box;
+            font-family: 'Sarabun', sans-serif;
+            user-select: none;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000;
+        }
+
+        /* หน้าจอเริ่มต้น / เลือกตัวละคร และกระดานผู้นำ */
+        #start-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.8)), url('https://images.unsplash.com/photo-1508739773434-c26b3d09e071?q=80&w=1920') no-repeat center center/cover;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            color: #fff;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .container {
+            background: rgba(44, 62, 80, 0.9);
+            padding: 25px;
+            border-radius: 15px;
+            border: 3px solid #d4af37;
+            max-width: 650px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #d4af37;
+            margin-top: 0;
+            font-size: 2.2rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.6);
+        }
+
+        .input-group {
+            margin: 15px 0;
+        }
+
+        input[type="text"] {
+            width: 80%;
+            padding: 10px;
+            font-size: 1.1rem;
+            border-radius: 5px;
+            border: 2px solid #d4af37;
+            text-align: center;
+            background: #fff;
+            color: #333;
+        }
+
+        .avatar-select {
+            display: flex;
+            justify-content: space-around;
+            margin: 15px 0;
+            gap: 10px;
+        }
+
+        .avatar-option {
+            flex: 1;
+            border: 2px solid transparent;
+            border-radius: 10px;
+            padding: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: rgba(255,255,255,0.1);
+            font-size: 0.9rem;
+        }
+
+        .avatar-option:hover {
+            border-color: #fff;
+        }
+
+        .avatar-option.selected {
+            border-color: #d4af37;
+            background: rgba(212, 175, 55, 0.3);
+            transform: scale(1.05);
+        }
+
+        .avatar-img {
+            font-size: 2.5rem;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .rules {
+            text-align: left;
+            background: rgba(0,0,0,0.5);
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            margin-bottom: 15px;
+            line-height: 1.5;
+            border-left: 4px solid #d4af37;
+        }
+
+        /* ตารางอันดับ Leaderboard */
+        .leaderboard-box {
+            background: rgba(26, 37, 48, 0.95);
+            border: 2px solid #d4af37;
+            border-radius: 10px;
+            padding: 15px;
+            width: 100%;
+            max-width: 650px;
+            color: #fff;
+            margin-top: 10px;
+        }
+
+        .leaderboard-title {
+            color: #f1c40f;
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .leaderboard-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .leaderboard-table th, .leaderboard-table td {
+            padding: 8px;
+            border-bottom: 1px solid rgba(212,175,55,0.3);
+            text-align: center;
+        }
+
+        .leaderboard-table th {
+            background: rgba(212, 175, 55, 0.2);
+            color: #d4af37;
+        }
+
+        .btn {
+            background: #b22222;
+            color: white;
+            border: 2px solid #d4af37;
+            padding: 12px 30px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.2s;
+            width: 100%;
+        }
+
+        .btn:hover {
+            background: #ff4500;
+        }
+
+        /* ระบบควบคุมการควบคุม HUD ส่วนหัวบนหน้าจอ */
+        #hud {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            right: 5px;
+            z-index: 10;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            pointer-events: none;
+        }
+
+        .hud-panel {
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 6px 10px;
+            border-radius: 5px;
+            border: 1px solid #d4af37;
+            pointer-events: auto;
+            font-size: 0.8rem;
+            flex: 1;
+            min-width: 140px;
+            text-align: center;
+        }
+
+        .highlight {
+            color: #d4af37;
+            font-weight: bold;
+        }
+
+        /* ปุ่มเปิด/ปิด แผงควบคุมบนมือถือเพื่อไม่ให้บังจอ */
+        #toggle-panel-btn {
+            position: absolute;
+            right: 10px;
+            top: 75px;
+            z-index: 20;
+            background: #d4af37;
+            color: #000;
+            border: none;
+            padding: 8px 12px;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+        }
+
+        /* แผงควบคุมระบบฟาร์ม ด้านขวา (Responsive) */
+        #farm-panel {
+            position: absolute;
+            right: 10px;
+            top: 115px;
+            bottom: 130px;
+            width: 300px;
+            background: rgba(20, 30, 40, 0.95);
+            border: 2px solid #d4af37;
+            border-radius: 10px;
+            z-index: 15;
+            padding: 12px;
+            color: white;
+            overflow-y: auto;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+
+        /* สไตล์สำหรับซ่อนแผงในมือถือ */
+        #farm-panel.collapsed {
+            transform: translateX(330px);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .panel-title {
+            text-align: center;
+            color: #d4af37;
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+            border-bottom: 1px solid #d4af37;
+            padding-bottom: 3px;
+            font-weight: bold;
+        }
+
+        .farm-item {
+            background: rgba(255,255,255,0.07);
+            border: 1px solid #555;
+            border-radius: 5px;
+            padding: 8px;
+            margin-bottom: 8px;
+        }
+
+        .farm-item-header {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            font-size: 0.85rem;
+            margin-bottom: 5px;
+        }
+
+        .status-badge {
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-size: 0.7rem;
+            color: white;
+        }
+
+        .status-empty { background: #7f8c8d; }
+        .status-process { background: #2980b9; }
+        .status-ready { background: #27ae60; animation: pulse 1s infinite; }
+
+        .action-btn {
+            width: 100%;
+            padding: 6px;
+            background: #27ae60;
+            border: none;
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .action-btn:disabled {
+            background: #34495e;
+            cursor: not-allowed;
+            color: #aaa;
+        }
+
+        /* ปุ่มขายผลผลิตด้านล่าง */
+        .sell-all-box {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            width: 300px;
+            z-index: 10;
+        }
+
+        .btn-sell-all {
+            width: 100%;
+            background: #e67e22;
+            color: white;
+            border: 2px solid #d4af37;
+            padding: 10px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        /* ปุ่มควบคุม D-Pad บนหน้าจอสำหรับแท็บเล็ตและมือถือ */
+        #controls-dpad {
+            position: absolute;
+            left: 10px;
+            bottom: 10px;
+            z-index: 10;
+            display: grid;
+            grid-template-columns: repeat(3, 42px);
+            grid-template-rows: repeat(3, 42px);
+            gap: 4px;
+        }
+
+        .dpad-btn {
+            background: rgba(0,0,0,0.75);
+            color: white;
+            border: 1px solid #d4af37;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        .dpad-btn:active {
+            background: #d4af37;
+            color: black;
+        }
+
+        /* หน้าต่างป๊อปอัปคำถามบาลี-สันสกฤต */
+        #quiz-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 110;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            padding: 15px;
+        }
+
+        .quiz-container {
+            background: #1e272e;
+            border: 3px solid #e67e22;
+            border-radius: 12px;
+            padding: 20px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 0 25px rgba(230, 126, 34, 0.6);
+        }
+
+        .quiz-q {
+            font-size: 1.15rem;
+            margin-bottom: 15px;
+            color: #f1c40f;
+            border-left: 4px solid #e67e22;
+            padding-left: 8px;
+            line-height: 1.4;
+        }
+
+        .quiz-ans-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .ans-btn {
+            background: rgba(255,255,255,0.08);
+            color: white;
+            border: 1px solid #7f8c8d;
+            padding: 10px;
+            text-align: left;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: 0.2s;
+        }
+
+        .ans-btn:hover {
+            background: rgba(230, 126, 34, 0.2);
+            border-color: #e67e22;
+        }
+
+        /* ป้ายเตือนพายุเข้า */
+        #storm-banner {
+            position: fixed;
+            top: 75px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(192, 57, 43, 0.95);
+            color: white;
+            border: 2px solid #fff;
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.8rem;
+            z-index: 9;
+            display: none;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        /* หน้าต่างชัยชนะ */
+        #victory-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, #2c3e50, #000000);
+            z-index: 120;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .victory-box {
+            border: 4px dashed #d4af37;
+            padding: 25px;
+            border-radius: 20px;
+            background: rgba(0,0,0,0.7);
+            max-width: 500px;
+            width: 100%;
+        }
+
+        /* ปรับแต่งปุ่มและ HUD สำหรับหน้าจอขนาดเล็กพิเศษ (Mobile Portrait) */
+        @media (max-width: 600px) {
+            h1 { font-size: 1.6rem; }
+            .avatar-img { font-size: 2rem; }
+            .btn { font-size: 1rem; padding: 10px; }
+            .hud-panel { font-size: 0.7rem; min-width: 100px; padding: 4px; }
+            .sell-all-box { width: calc(100% - 150px); left: 140px; right: 10px; bottom: 10px; }
+            .btn-sell-all { font-size: 0.85rem; padding: 8px; }
+            #farm-panel { width: 280px; top: 115px; bottom: 110px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="start-screen">
+        <div class="container">
+            <h1>🌾 ฟาร์มบาลี-สันสกฤต 🌾</h1>
+            <p style="font-size:0.9rem; margin:5px 0;">ระบบเกษตรกรรมและภาษาศาสตร์จำลองระดับชั้น ม.5</p>
+            
+            <div class="input-group">
+                <label for="player-name" style="display:block; margin-bottom:5px; font-weight:bold;">ระบุชื่อจอมยุทธ์:</label>
+                <input type="text" id="player-name" placeholder="กรอกชื่อของคุณ..." value="ศิษย์นิรนาม">
+            </div>
+
+            <p style="margin-bottom: 5px; font-size:0.9rem;">เลือกตัวละครจีนโบราณ (ชุดฮั่นฝู):</p>
+            <div class="avatar-select">
+                <div class="avatar-option selected" onclick="selectAvatar(this, '👩‍🌾 ศิษย์พี่หญิง')">
+                    <span class="avatar-img">👩‍🌾</span>
+                    <span>ศิษย์พี่หญิง</span>
+                </div>
+                <div class="avatar-option" onclick="selectAvatar(this, '👨‍🌾 ศิษย์พี่ชาย')">
+                    <span class="avatar-img">👨‍🌾</span>
+                    <span>ศิษย์พี่ชาย</span>
+                </div>
+                <div class="avatar-option" onclick="selectAvatar(this, '🧙‍♂️ ผู้อาวุโส')">
+                    <span class="avatar-img">🧙‍♂️</span>
+                    <span>ผู้อาวุโส</span>
+                </div>
+            </div>
+
+            <div class="rules">
+                <strong>📜 ข้อตกลงแห่งสำนัก:</strong><br>
+                • <b>พืช (บาลี):</b> ปลูก (-10) → รดน้ำ → รอ 30 วิ → เก็บเกี่ยว (ขายชิ้นละ 25, ภาษี 2%)<br>
+                • <b>สัตว์ (สันสกฤต):</b> สร้างคอก (-10) → อาหาร (-10) → น้ำ (-5) → รอ 30 วิ → เก็บเกี่ยว (ขายชิ้นละ 50, ภาษี 3%)<br>
+                • <b>ด่านวิเคราะห์:</b> เมื่อกดขายสินค้า ต้องตอบคำถามบาลี-สันสกฤตแบบคิดวิเคราะห์เอง (ไม่มีคำใบ้) ตอบผิดจะโดนหักเงิน 5 ตำลึง!<br>
+                • <b>พายุเข้า:</b> ทุกรายได้สะสมครบ 500 ตำลึง พายุจะถล่มฟาร์ม 30 วินาที ราคาผลผลิตจะลดลงชิ้นละ 5 ตำลึง!<br>
+                • <b>เป้าหมาย:</b> สะสมเงินก้าวสู่ฐานะ <b>"จ้าวสำนัก"</b> (9,000 ตำลึงขึ้นไป) เพื่อจารึกชื่อลงทำเนียบ!
+            </div>
+
+            <button class="btn" onclick="startGame()">🎵 เปิดเพลงบรรเลง & เข้าสู่ฟาร์ม</button>
+        </div>
+
+        <div class="leaderboard-box">
+            <div class="leaderboard-title">🏆 ทำเนียบอันดับจอมยุทธ์ฟาร์ม (Top 5)</div>
+            <table class="leaderboard-table">
+                <thead>
+                    <tr>
+                        <th>อันดับ</th>
+                        <th>ชื่อผู้เล่น</th>
+                        <th>ระดับขั้น</th>
+                        <th>รายได้สะสม (ตำลึง)</th>
+                    </tr>
+                </thead>
+                <tbody id="leaderboard-rows">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="hud">
+        <div class="hud-panel">👤 จอมยุทธ์: <span id="hud-name" class="highlight">-</span> <span id="hud-avatar"></span></div>
+        <div class="hud-panel">🏅 ขั้น: <span id="hud-rank" class="highlight">ศิษย์นอกสำนัก</span></div>
+        <div class="hud-panel">💰 เงินปัจจุบัน: <span id="hud-money" class="highlight">50</span> ตำลึง</div>
+        <div class="hud-panel">📈 รายได้สะสม: <span id="hud-cumulative" class="highlight">0</span> / 9000</div>
+    </div>
+
+    <div id="storm-banner">⛈️ พายุเข้าถล่มสำนัก! ผลผลิตราคาลดลงชิ้นละ -5 ตำลึง (เหลือเวลา <span id="storm-timer">30</span> วินาที)</div>
+
+    <button id="toggle-panel-btn" onclick="toggleFarmPanel()">📋 แผงควบคุมฟาร์ม (เปิด/ปิด)</button>
+
+    <div id="farm-panel">
+        <div class="panel-title">🌱 แปลงเกษตรกรรม (บาลี)</div>
+        <div id="crop-list"></div>
+        
+        <div class="panel-title" style="margin-top:10px;">🐖 คอกปศุสัตว์ (สันสกฤต)</div>
+        <div id="animal-list"></div>
+    </div>
+
+    <div class="sell-all-box">
+        <button class="btn-sell-all" onclick="triggerSellAll()">💰 ขายผลผลิตทั้งหมด 💰<br><span id="inventory-status">(ผัก: 0 | สัตว์: 0)</span></button>
+    </div>
+
+    <div id="controls-dpad">
+        <div class="dpad-btn" onclick="moveCam('turnLeft')">↺</div>
+        <div class="dpad-btn" onclick="moveCam('forward')">▲</div>
+        <div class="dpad-btn" onclick="moveCam('turnRight')">↻</div>
+        <div class="dpad-btn" onclick="moveCam('left')">◀</div>
+        <div class="dpad-btn" style="background:rgba(212,175,55,0.2); font-size:0.7rem;">เดิน</div>
+        <div class="dpad-btn" onclick="moveCam('right')">▶</div>
+        <div></div>
+        <div class="dpad-btn" onclick="moveCam('backward')">▼</div>
+        <div></div>
+    </div>
+
+    <div id="quiz-modal">
+        <div class="quiz-container">
+            <h3 style="margin-top:0; color:#e67e22; text-align:center; margin-bottom:5px;">🛡️ ด่านตรวจสอบภาษากลางตลาดหลวง</h3>
+            <p style="font-size:0.8rem; color:#bdc3c7; text-align:center; margin-bottom:12px;">จงวิเคราะห์หลักภาษาเพื่อนำส่งผลผลิตจำหน่าย</p>
+            <div id="quiz-question" class="quiz-q">คำถามกำลังโหลด...</div>
+            <div id="quiz-answers" class="quiz-ans-list"></div>
+        </div>
+    </div>
+
+    <div id="victory-screen">
+        <div class="victory-box">
+            <h1 style="font-size:2.5rem; color:#f1c40f; margin-bottom:10px;">👑 ชัยชนะขั้นสูงสุด 👑</h1>
+            <h3 style="color:#fff;" id="victory-announcement">ท่านได้ก้าวขึ้นสู่ตำแหน่ง "จ้าวสำนักบาลี-สันสกฤต"</h3>
+            <p style="font-size:0.95rem; margin:15px 0; color:#bdc3c7;">ท่านวิเคราะห์ความต่างของหลักภาษาบาลีและสันสกฤตได้อย่างแตกฉาน และบันทึกชื่อลงสู่ทำเนียบจอมยุทธ์เรียบร้อยแล้ว!</p>
+            <button class="btn" onclick="location.reload()">กลับสู่หน้าหลัก</button>
+        </div>
+    </div>
+
+    <a-scene embedded style="width: 100%; height: 100%;" vr-mode-ui="enabled: false">
+        
+        <a-sky id="game-sky" color="#a3d5ff"></a-sky>
+        <a-light type="ambient" color="#ffffff" intensity="0.75"></a-light>
+        <a-light type="directional" color="#fff" intensity="0.5" position="-1 4 2"></a-light>
+
+        <a-entity id="camera-rig" position="0 2 12" rotation="0 0 0">
+            <a-camera look-controls="enabled: true" wasd-controls="enabled: true"></a-camera>
+        </a-entity>
+
+        <a-plane position="0 0 0" rotation="-90 0 0" width="40" height="40" color="#4d6232"></a-plane>
+
+        <a-box id="river" position="-15 0.05 0" width="6" height="0.1" depth="40" color="#2980b9" opacity="0.85">
+            <a-animation attribute="position" to="-15 0.08 0" direction="alternate" dur="2000" repeat="indefinite"></a-animation>
+        </a-box>
+
+        <a-box id="fish-pond" position="-8 0.05 5" width="4" height="0.2" depth="4" color="#3498db">
+            <a-box position="0 0.1 0" width="3.6" height="0.01" depth="3.6" color="#1abc9c"></a-box>
+        </a-box>
+
+        <a-cone position="0 -1 -12" radius-bottom="8" radius-top="3" height="6" color="#343f2b"></a-cone>
+
+        <a-entity id="chinese-pavilion" position="0 2 -12" animation="property: rotation; to: 0 360 0; loop: true; dur: 45000; easing: linear">
+            <a-cylinder color="#d4af37" height="0.4" radius="3"></a-cylinder>
+            <a-cylinder color="#b22222" height="3" radius="0.1" position="-1.5 1.5 -1.5"></a-cylinder>
+            <a-cylinder color="#b22222" height="3" radius="0.1" position="1.5 1.5 -1.5"></a-cylinder>
+            <a-cylinder color="#b22222" height="3" radius="0.1" position="-1.5 1.5 1.5"></a-cylinder>
+            <a-cylinder color="#b22222" height="3" radius="0.1" position="1.5 1.5 1.5"></a-cylinder>
+            <a-cone color="#b22222" radius-bottom="3.5" radius-top="0.1" height="1.5" position="0 3.7 0"></a-cone>
+            <a-sphere color="#d4af37" radius="0.2" position="0 4.5 0"></a-sphere>
+
+            <a-box color="#7f8c8d" width="0.6" height="0.5" depth="0.6" position="0 0.25 0"></a-box> 
+            <a-cylinder color="#d35400" radius="0.08" height="0.15" position="0 0.55 0"></a-cylinder>
+            <a-cylinder color="#f39c12" radius="0.03" height="0.05" position="0.15 0.52 0"></a-cylinder>
+
+            <a-sphere position="0 0.7 0" radius="0.04" color="#ffffff" opacity="0.6">
+                <a-animation attribute="position" to="0 1.8 0" dur="2500" repeat="indefinite" easing="linear"></a-animation>
+                <a-animation attribute="scale" to="3 3 3" dur="2500" repeat="indefinite" easing="linear"></a-animation>
+                <a-animation attribute="opacity" to="0" dur="2500" repeat="indefinite" easing="linear"></a-animation>
+            </a-sphere>
+        </a-entity>
+
+        <a-entity position="-5 0 -6" id="bamboo-clump-1">
+            <a-cylinder color="#27ae60" radius="0.07" height="4" position="0 2 0" class="bamboo-stem"></a-cylinder>
+            <a-cylinder color="#27ae60" radius="0.06" height="3.5" position="0.4 1.75 0.2" class="bamboo-stem"></a-cylinder>
+        </a-entity>
+        <a-entity position="5 0 -6" id="bamboo-clump-2">
+            <a-cylinder color="#27ae60" radius="0.07" height="4" position="0 2 0" class="bamboo-stem"></a-cylinder>
+            <a-cylinder color="#27ae60" radius="0.06" height="3.5" position="-0.4 1.75 0.3" class="bamboo-stem"></a-cylinder>
+        </a-entity>
+
+        <a-entity position="3 0 2">
+            <a-box position="-2 0.01 -2" width="1.6" height="0.05" depth="1.6" color="#5c4033"></a-box>
+            <a-box position="0 0.01 -2" width="1.6" height="0.05" depth="1.6" color="#5c4033"></a-box>
+            <a-box position="-2 0.01 0" width="1.6" height="0.05" depth="1.6" color="#5c4033"></a-box>
+            <a-box position="0 0.01 0" width="1.6" height="0.05" depth="1.6" color="#5c4033"></a-box>
+
+            <a-image id="crop-img-0" position="-2 0.7 -2" width="1.2" height="1.2" visible="false" look-at="#camera-rig"></a-image>
+            <a-image id="crop-img-1" position="0 0.7 -2" width="1.2" height="1.2" visible="false" look-at="#camera-rig"></a-image>
+            <a-image id="crop-img-2" position="-2 0.7 0" width="1.2" height="1.2" visible="false" look-at="#camera-rig"></a-image>
+            <a-image id="crop-img-3" position="0 0.7 0" width="1.2" height="1.2" visible="false" look-at="#camera-rig"></a-image>
+        </a-entity>
+
+        <a-entity position="-3 0 2">
+            <a-box position="-1.5 0.01 -1" width="2.2" height="0.05" depth="2.2" color="#7f8c8d"></a-box>
+            <a-box position="1.5 0.01 -1" width="2.2" height="0.05" depth="2.2" color="#7f8c8d"></a-box>
+
+            <a-image id="animal-img-0" position="-1.5 0.8 -1" width="1.4" height="1.4" visible="false" look-at="#camera-rig"></a-image>
+            <a-image id="animal-img-1" position="1.5 0.8 -1" width="1.4" height="1.4" visible="false" look-at="#camera-rig"></a-image>
+        </a-entity>
+
+    </a-scene>
+
+    <script>
+        // ข้อมูลลิงก์รูปภาพจริงแบบปลอดลิขสิทธิ์ (ต้นไม้และสัตว์) จาก Unsplash สำหรับนำไป Render ในฉาก 3D
+        const imgAssets = {
+            sprout: 'https://images.unsplash.com/photo-1406182606516-ec0ea650dcbf?w=250&auto=format&fit=crop', // ต้นกล้าพืชเริ่มปลูก
+            grownCrop: 'https://images.unsplash.com/photo-1530595467537-0b5996c41f2d?w=250&auto=format&fit=crop', // พืชผักใบเขียวโตเต็มที่
+            babyAnimal: 'https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=250&auto=format&fit=crop', // ลูกสัตว์ตัวเล็ก
+            adultAnimal: 'https://images.unsplash.com/photo-1589923188900-85dae523342b?w=250&auto=format&fit=crop' // สัตว์โตเต็มวัยสมบูรณ์
+        };
+
+        // สถานะของเกมหลัก
+        let gameState = {
+            money: 50,
+            cumulativeEarnings: 0,
+            playerName: "ศิษย์นิรนาม",
+            avatar: "👩‍🌾 ศิษย์พี่หญิง",
+            rank: "ศิษย์นอกสำนัก",
+            inventory: { crops: 0, animals: 0 },
+            stormActive: false,
+            stormTimeLeft: 0,
+            lastStormMilestone: 0
+        };
+
+        let crops = [
+            { id: 0, status: 'empty', timer: 0 },
+            { id: 1, status: 'empty', timer: 0 },
+            { id: 2, status: 'empty', timer: 0 },
+            { id: 3, status: 'empty', timer: 0 }
+        ];
+
+        let animals = [
+            { id: 0, status: 'unbuilt', timer: 0 },
+            { id: 1, status: 'unbuilt', timer: 0 }
+        ];
+
+        // ระบบคลังคำถามวิเคราะห์หลักภาษาบาลี-สันสกฤต ม.5 (ไม่มีคำใบ้)
+        const quizBank = [
+            { q: "คำในข้อใดเป็นคำมาจากภาษา 'บาลี' ทั้งหมดโดยพิจารณาจากหลักพยัญชนะวรรค?", a: ["ปัญญา, จุฬา", "กษัตริย์, ศิลปะ", "ภรรยา, ปราชญ์", "ศึกษา, วิทยุ"], c: 0 },
+            { q: "คำว่า 'ธรรม' และ 'กรรม' ปรากฏอักษรกระดกซ้อน (รร) ซึ่งเป็นเอกลักษณ์เด่นชัดของภาษาใด?", a: ["ภาษาบาลี", "ภาษาสันสกฤต", "ภาษาเขมร", "ภาษาไทยแท้"], c: 1 },
+            { q: "พยัญชนะควบกล้ำรวมถึงโครงสร้างอักษรนำควบกลุ่มตัว ย อย่างในคำว่า 'ปรีชา' บ่งชี้ว่าเป็นภาษาใด?", a: ["ภาษาบาลี", "ภาษาสันสกฤต", "ภาษาขอมโบราณ", "ภาษาล้านนา"], c: 1 },
+            { q: "หลักการสะกดพยัญชนะซ้อนตัวตามในกลุ่มวรรคเดียวกันเช่นคำว่า 'มัจฉา' เป็นกฎเกณฑ์ตายตัวของภาษาใด?", a: ["ภาษาบาลี", "ภาษาสันสกฤต", "ภาษาไทยเดิม", "ภาษาอังกฤษ"], c: 0 },
+            { q: "หากพบตัวอักษร 'ศ' และ 'ษ' อยู่ในคำไทยที่หยิบยืมมา เช่น 'ราษฎร์' คำนั้นจะจัดเป็นภาษาใด?", a: ["ภาษาบาลี", "ภาษาสันสกฤต", "ภาษาชวา-มลายู", "ภาษาจีน"], c: 1 },
+            { q: "สระพิจารณาพิเศษกลุ่ม 'ไอ เอา ฤ ฤา ฦ ฦา' มีระบุโครงสร้างการใช้งานเฉพาะในระบบภาษาใด?", a: ["ภาษาบาลี", "ภาษาสันสกฤต", "ภาษาไทยแท้", "ข้อทีกระทำผิดทั้งหมด"], c: 1 },
+            { q: "ตัวอักษร 'ฬ' นิยมพบในคำยืมเฉพาะฝั่งภาษาใด เช่นเดียวกับคำว่า 'วิฬาร์' หรือ 'กีฬา'?", a: ["ภาษาบาลี", "ภาษาสันสกฤต", "ภาษาเปอร์เซีย", "ภาษาบาลีผสมสันสกฤต"], c: 0 },
+            { q: "คำว่า 'สัจจะ' ในภาษาบาลี เมื่อทำการแปลงให้อยู่ในรูปแบบโครงสร้างภาษาสันสกฤต จะตรงกับรูปคำใด?", a: ["สัตย์", "สัจจา", "สัจธรรม", "พรมหันต์"], c: 0 },
+            { q: "คำว่า 'พยากรณ์' แตกต่างจากภาษาบาลีเนื่องด้วยใช้โครงสร้างอักษรควบข้ามวรรค ตัวคำนี้จัดเป็นภาษาใด?", a: ["ภาษาบาลี", "ภาษาสันสกฤต", "ภาษาไทยครึ่งคำ", "ไม่มีข้อถูก"], c: 1 }
+        ];
+
+        // โหลดข้อมูลทำเนียบผู้นำจากคลังความจำเครื่องเมื่อเปิดหน้าเว็บ
+        window.onload = function() {
+            renderLeaderboard();
+        };
+
+        // ระบบดนตรีบรรเลงจีนโบราณจำลอง (Web Audio API Synth) ทำงานออฟไลน์ 100%
+        let audioCtx = null;
+        function playChineseBGM() {
+            if (audioCtx) return;
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            
+            // โน้ตเพลงบันไดเสียงเพนทาโทนิกสไตล์จีนโบราณ (C, D, E, G, A)
+            const pentatonicScale = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25, 587.33];
+            
+            setInterval(() => {
+                if (!audioCtx || gameState.rank === "จ้าวสำนัก") return;
+                
+                // สุ่มสร้างเสียงตัวโน้ตเลียนแบบเครื่องดนตรีโบราณ (กู่เจิง/ขลุ่ยผิว)
+                let note = pentatonicScale[Math.floor(Math.random() * pentatonicScale.length)];
+                let osc = audioCtx.createOscillator();
+                let gainNode = audioCtx.createGain();
+                
+                osc.type = "sine"; // คลื่นเสียงนุ่มนวล
+                osc.frequency.setValueAtTime(note, audioCtx.currentTime);
+                
+                gainNode.gain.setValueAtTime(0.04, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 2.5);
+                
+                osc.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                
+                osc.start();
+                osc.stop(audioCtx.currentTime + 2.5);
+            }, 1000); // ทำงานวนลูปบรรเลงคลอต่อเนื่อง
+        }
+
+        function selectAvatar(element, avatarName) {
+            document.querySelectorAll('.avatar-option').forEach(opt => opt.classList.remove('selected'));
+            element.classList.add('selected');
+            gameState.avatar = avatarName;
+        }
+
+        // ย่อหรือขยายแผงควบคุมฟาร์มในโหมดหน้าจอมือถือ
+        function toggleFarmPanel() {
+            document.getElementById('farm-panel').classList.toggle('collapsed');
+        }
+
+        // เริ่มต้นเข้ายุทธภพเกมฟาร์ม
+        function startGame() {
+            const nameInput = document.getElementById('player-name').value.trim();
+            if (nameInput !== "") gameState.playerName = nameInput;
+
+            // เรียกทำงานระบบเสียงบรรเลงจีน
+            playChineseBGM();
+
+            document.getElementById('start-screen').style.display = 'none';
+            document.getElementById('hud-name').innerText = gameState.playerName;
+            document.getElementById('hud-avatar').innerText = gameState.avatar;
+
+            updateHUD();
+            renderCropList();
+            renderAnimalList();
+
+            // รันเวลาตัวแปลงและสัตว์ทุกวินาที
+            setInterval(gameTick, 1000);
+            animateBamboo();
+        }
+
+        // ประมวลผลและอัปเดตข้อมูลบนหน้าจอ
+        function updateHUD() {
+            document.getElementById('hud-money').innerText = Math.floor(gameState.money);
+            document.getElementById('hud-cumulative').innerText = Math.floor(gameState.cumulativeEarnings);
+
+            let currentCE = gameState.cumulativeEarnings;
+            if (currentCE >= 0 && currentCE <= 299) gameState.rank = "ศิษย์นอกสำนัก";
+            else if (currentCE >= 300 && currentCE <= 899) gameState.rank = "ศิษย์ในสำนัก";
+            else if (currentCE >= 900 && currentCE <= 1999) gameState.rank = "ศิษย์เอก";
+            else if (currentCE >= 2000 && currentCE <= 4999) gameState.rank = "ศิษย์สืบทอด";
+            else if (currentCE >= 5000 && currentCE <= 8999) gameState.rank = "ผู้อาวุโส";
+            else if (currentCE >= 9000) {
+                gameState.rank = "จ้าวสำนัก";
+                saveScoreToLeaderboard();
+                triggerVictory();
+            }
+
+            document.getElementById('hud-rank').innerText = gameState.rank;
+            document.getElementById('inventory-status').innerText = `(ผัก: ${gameState.inventory.crops} | สัตว์: ${gameState.inventory.animals})`;
+
+            // ระบบแจ้งภัยพิบัติพายุทุกรายได้ครบ 500 ตำลึง
+            let currentMilestone = Math.floor(currentCE / 500);
+            if (currentMilestone > gameState.lastStormMilestone && !gameState.stormActive) {
+                triggerStorm();
+                gameState.lastStormMilestone = currentMilestone;
+            }
+        }
+
+        function triggerStorm() {
+            gameState.stormActive = true;
+            gameState.stormTimeLeft = 30;
+            document.getElementById('storm-banner').style.display = 'block';
+            document.getElementById('game-sky').setAttribute('color', '#4f5d6b');
+        }
+
+        function triggerVictory() {
+            document.getElementById('victory-screen').style.display = 'flex';
+        }
+
+        // จัดการบันทึกสถิติลงกระดานอันดับ (Leaderboard System)
+        function saveScoreToLeaderboard() {
+            let leaderboard = JSON.parse(localStorage.getItem('baliFarmLeaderboard')) || [];
+            leaderboard.push({
+                name: gameState.playerName,
+                rank: gameState.rank,
+                score: Math.floor(gameState.cumulativeEarnings)
+            });
+            // เรียงลำดับคะแนนจากมากไปน้อย
+            leaderboard.sort((a, b) => b.score - a.score);
+            // เก็บเฉพาะยอดฝีมือ Top 5 ลำดับแรก
+            leaderboard = leaderboard.slice(0, 5);
+            localStorage.setItem('baliFarmLeaderboard', JSON.stringify(leaderboard));
+            renderLeaderboard();
+        }
+
+        function renderLeaderboard() {
+            let leaderboard = JSON.parse(localStorage.getItem('baliFarmLeaderboard')) || [
+                {name: "ปรมาจารย์บาลี", rank: "จ้าวสำนัก", score: 9500},
+                {name: "ศิษย์พี่ใหญ่", rank: "ผู้อาวุโส", score: 6200}
+            ];
+            let html = "";
+            leaderboard.forEach((item, index) => {
+                html += `<tr>
+                    <td>${index + 1}</td>
+                    <td>${item.name}</td>
+                    <td><span style="color:#f1c40f">${item.rank}</span></td>
+                    <td>${item.score}</td>
+                </tr>`;
+            });
+            document.getElementById('leaderboard-rows').innerHTML = html;
+        }
+
+        // ลูประบบนับถอยหลังการโต
+        function gameTick() {
+            if (gameState.stormActive) {
+                gameState.stormTimeLeft--;
+                document.getElementById('storm-timer').innerText = gameState.stormTimeLeft;
+                if (gameState.stormTimeLeft <= 0) {
+                    gameState.stormActive = false;
+                    document.getElementById('storm-banner').style.display = 'none';
+                    document.getElementById('game-sky').setAttribute('color', '#a3d5ff');
+                }
+            }
+
+            // จัดการพืช
+            crops.forEach(crop => {
+                if (crop.status === 'watered') {
+                    crop.timer--;
+                    if (crop.timer <= 0) {
+                        crop.status = 'ready';
+                        // แสดงรูปภาพผลผลิตโตเต็มที่จริงบนฉาก 3D
+                        let imgEl = document.getElementById(`crop-img-${crop.id}`);
+                        imgEl.setAttribute('src', imgAssets.grownCrop);
+                    }
+                }
+            });
+
+            // จัดการสัตว์
+            animals.forEach(ani => {
+                if (ani.status === 'growing') {
+                    ani.timer--;
+                    if (ani.timer <= 0) {
+                        ani.status = 'ready';
+                        // แสดงรูปภาพสัตว์ตัวจริงโตเต็มวัยบนคอก 3D
+                        let imgEl = document.getElementById(`animal-img-${ani.id}`);
+                        imgEl.setAttribute('src', imgAssets.adultAnimal);
+                    }
+                }
+            });
+
+            renderCropList();
+            renderAnimalList();
+        }
+
+        // ควบคุมระบบแปลงเกษตรกรรม (บาลี)
+        function renderCropList() {
+            let html = "";
+            crops.forEach(crop => {
+                let badge = "", btnText = "", disabled = false, actionFunc = "";
+                if(crop.status === 'empty') {
+                    badge = `<span class="status-badge status-empty">ว่างเปล่า</span>`;
+                    btnText = "🌱 ปลูกพืช (-10 ตำลึง)";
+                    actionFunc = `plantCrop(${crop.id})`;
+                    if(gameState.money < 10) disabled = true;
+                } else if(crop.status === 'planted') {
+                    badge = `<span class="status-badge status-process">รอการรดน้ำ</span>`;
+                    btnText = "💧 รดน้ำพืชบาลี";
+                    actionFunc = `waterCrop(${crop.id})`;
+                } else if(crop.status === 'watered') {
+                    badge = `<span class="status-badge status-process">กำลังโต (${crop.timer}วิ)</span>`;
+                    btnText = "⏳ รอเก็บเกี่ยว...";
+                    disabled = true;
+                } else if(crop.status === 'ready') {
+                    badge = `<span class="status-badge status-ready">โตจริงพร้อมเก็บ</span>`;
+                    btnText = "🧺 เก็บเกี่ยวผักบาลี";
+                    actionFunc = `harvestCrop(${crop.id})`;
+                }
+                html += `<div class="farm-item">
+                    <div class="farm-item-header"><span>แปลงผักที่ ${crop.id + 1}</span>${badge}</div>
+                    <button class="action-btn" onclick="${actionFunc}" ${disabled ? 'disabled' : ''}>${btnText}</button>
+                </div>`;
+            });
+            document.getElementById('crop-list').innerHTML = html;
+        }
+
+        function plantCrop(id) {
+            if (gameState.money >= 10) {
+                gameState.money -= 10;
+                crops[id].status = 'planted';
+                let imgEl = document.getElementById(`crop-img-${id}`);
+                imgEl.setAttribute('src', imgAssets.sprout);
+                imgEl.setAttribute('visible', 'true');
+                updateHUD();
+                renderCropList();
+            }
+        }
+
+        function waterCrop(id) {
+            crops[id].status = 'watered';
+            crops[id].timer = 30;
+            renderCropList();
+        }
+
+        function harvestCrop(id) {
+            crops[id].status = 'empty';
+            document.getElementById(`crop-img-${id}`).setAttribute('visible', 'false');
+            gameState.inventory.crops++;
+            updateHUD();
+            renderCropList();
+        }
+
+        // ควบคุมระบบปศุสัตว์ (สันสกฤต)
+        function renderAnimalList() {
+            let html = "";
+            animals.forEach(ani => {
+                let badge = "", btnText = "", disabled = false, actionFunc = "";
+                if(ani.status === 'unbuilt') {
+                    badge = `<span class="status-badge status-empty">พื้นที่โล่ง</span>`;
+                    btnText = "🔨 สร้างคอกสัตว์ (-10 ตำลึง)";
+                    actionFunc = `buildPen(${ani.id})`;
+                    if(gameState.money < 10) disabled = true;
+                } else if(ani.status === 'empty') {
+                    badge = `<span class="status-badge status-empty">คอกว่าง</span>`;
+                    btnText = "🌾 ให้อาหาร (-10 ตำลึง)";
+                    actionFunc = `feedAnimal(${ani.id})`;
+                    if(gameState.money < 10) disabled = true;
+                } else if(ani.status === 'fed_no_water') {
+                    badge = `<span class="status-badge status-process">หิวน้ำ</span>`;
+                    btnText = "💧 ให้น้ำสัตว์ (-5 ตำลึง)";
+                    actionFunc = `waterAnimal(${ani.id})`;
+                    if(gameState.money < 5) disabled = true;
+                } else if(ani.status === 'growing') {
+                    badge = `<span class="status-badge status-process">สัตว์กำลังโต (${ani.timer}วิ)</span>`;
+                    btnText = "⏳ รอเติบโต...";
+                    disabled = true;
+                } else if(ani.status === 'ready') {
+                    badge = `<span class="status-badge status-ready">สัตว์โตจริงพร้อมขาย</span>`;
+                    btnText = "🥩 เก็บผลผลิตปศุสัตว์";
+                    actionFunc = `harvestAnimal(${ani.id})`;
+                }
+                html += `<div class="farm-item">
+                    <div class="farm-item-header"><span>คอกปศุสัตว์ที่ ${ani.id + 1}</span>${badge}</div>
+                    <button class="action-btn" onclick="${actionFunc}" ${disabled ? 'disabled' : ''}>${btnText}</button>
+                </div>`;
+            });
+            document.getElementById('animal-list').innerHTML = html;
+        }
+
+        function buildPen(id) {
+            if (gameState.money >= 10) {
+                gameState.money -= 10;
+                animals[id].status = 'empty';
+                updateHUD();
+                renderAnimalList();
+            }
+        }
+
+        function feedAnimal(id) {
+            if (gameState.money >= 10) {
+                gameState.money -= 10;
+                animals[id].status = 'fed_no_water';
+                let imgEl = document.getElementById(`animal-img-${id}`);
+                imgEl.setAttribute('src', imgAssets.babyAnimal);
+                imgEl.setAttribute('visible', 'true');
+                updateHUD();
+                renderAnimalList();
+            }
+        }
+
+        function waterAnimal(id) {
+            if (gameState.money >= 5) {
+                gameState.money -= 5;
+                animals[id].status = 'growing';
+                animals[id].timer = 30;
+                updateHUD();
+                renderAnimalList();
+            }
+        }
+
+        function harvestAnimal(id) {
+            animals[id].status = 'empty';
+            document.getElementById(`animal-img-${id}`).setAttribute('visible', 'false');
+            gameState.inventory.animals++;
+            updateHUD();
+            renderAnimalList();
+        }
+
+        // ระบบวิเคราะห์คำถามกลางตลาดเพื่อทำการขายผลผลิต
+        let currentQuizIndex = 0;
+        function triggerSellAll() {
+            if (gameState.inventory.crops === 0 && gameState.inventory.animals === 0) {
+                alert("ท่านยังไม่มีผลผลิตในคลังสินค้าพร้อมขาย!");
+                return;
+            }
+            currentQuizIndex = Math.floor(Math.random() * quizBank.length);
+            showQuiz();
+        }
+
+        function showQuiz() {
+            let quiz = quizBank[currentQuizIndex];
+            document.getElementById('quiz-question').innerText = quiz.q;
+            let html = "";
+            quiz.a.forEach((ans, index) => {
+                html += `<button class="ans-btn" onclick="checkAnswer(${index})">${index+1}. ${ans}</button>`;
+            });
+            document.getElementById('quiz-answers').innerHTML = html;
+            document.getElementById('quiz-modal').style.display = 'flex';
+        }
+
+        function checkAnswer(selectedIndex) {
+            let quiz = quizBank[currentQuizIndex];
+            document.getElementById('quiz-modal').style.display = 'none';
+
+            if (selectedIndex === quiz.c) {
+                processSales();
+            } else {
+                gameState.money -= 5;
+                if(gameState.money < 0) gameState.money = 0;
+                alert("❌ การวิเคราะห์หลักภาษาผิดพลาด! สินค้าโดนตีกลับและถูกหักค่าธรรมเนียมตรวจวิเคราะห์ 5 ตำลึง!");
+                updateHUD();
+            }
+        }
+
+        function processSales() {
+            let cropsCount = gameState.inventory.crops;
+            let animalsCount = gameState.inventory.animals;
+
+            let cropPrice = 25;
+            let animalPrice = 50;
+
+            if (gameState.stormActive) {
+                cropPrice -= 5;
+                animalPrice -= 5;
+            }
+
+            let cropRevenue = cropsCount * cropPrice;
+            let animalRevenue = animalsCount * animalPrice;
+
+            // หักอัตราภาษี (พืช 2%, สัตว์ 3%)
+            let cropNet = cropRevenue - (cropRevenue * 0.02);
+            let animalNet = animalRevenue - (animalRevenue * 0.03);
+            let totalNet = cropNet + animalNet;
+
+            gameState.money += totalNet;
+            gameState.cumulativeEarnings += totalNet;
+
+            gameState.inventory.crops = 0;
+            gameState.inventory.animals = 0;
+
+            alert(`✅ ตอบถูก! ขายผลผลิตเข้าท้องพระคลังสำเร็จ\n• ผักบาลี ${cropsCount} ชิ้น (หักภาษี 2% แล้ว)\n• สัตว์สันสกฤต ${animalsCount} ชิ้น (หักภาษี 3% แล้ว)\n💰 รายรับสุทธิรวม: ${totalNet.toFixed(1)} ตำลึง`);
+            
+            updateHUD();
+        }
+
+        // ระบบควบคุมทิศทางสัมผัสหน้าจอ D-Pad และ คีย์บอร์ด
+        function moveCam(dir) {
+            let rig = document.getElementById('camera-rig');
+            let pos = rig.getAttribute('position');
+            let rot = rig.getAttribute('rotation');
+            const step = 0.5;
+            const rotStep = 5;
+            let rad = rot.y * Math.PI / 180;
+
+            if (dir === 'forward') {
+                pos.x -= step * Math.sin(rad);
+                pos.z -= step * Math.cos(rad);
+            } else if (dir === 'backward') {
+                pos.x += step * Math.sin(rad);
+                pos.z += step * Math.cos(rad);
+            } else if (dir === 'left') {
+                pos.x -= step * Math.cos(rad);
+                pos.z += step * Math.sin(rad);
+            } else if (dir === 'right') {
+                pos.x += step * Math.cos(rad);
+                pos.z -= step * Math.sin(rad);
+            } else if (dir === 'turnLeft') {
+                rot.y += rotStep;
+            } else if (dir === 'turnRight') {
+                rot.y -= rotStep;
+            }
+
+            rig.setAttribute('position', pos);
+            rig.setAttribute('rotation', rot);
+        }
+
+        window.addEventListener('keydown', function(e) {
+            if(e.key === "ArrowUp" || e.key === "w" || e.key === "W") moveCam('forward');
+            if(e.key === "ArrowDown" || e.key === "s" || e.key === "S") moveCam('backward');
+            if(e.key === "ArrowLeft" || e.key === "a" || e.key === "A") moveCam('left');
+            if(e.key === "ArrowRight" || e.key === "d" || e.key === "D") moveCam('right');
+        });
+
+        // แอนิเมชันให้กอไผ่ริมเขาโยกไหวตามกระแสลม
+        function animateBamboo() {
+            let tick = 0;
+            function run() {
+                tick += 0.04;
+                let rotateZ = Math.sin(tick) * 3.5;
+                document.querySelectorAll('.bamboo-stem').forEach(stem => {
+                    stem.setAttribute('rotation', `0 0 ${rotateZ}`);
+                });
+                requestAnimationFrame(run);
+            }
+            run();
+        }
+    </script>
+</body>
+</html>
