@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>เกม นักสืบถิ่นเซนต์โยเซฟ บางนา</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;700&family=Mitr:wght@300;500&display=swap');
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Mitr', sans-serif;
+            user-select: none;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #1a1a2e;
+            color: #fff;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: 1024px;
+            max-height: 768px;
+            margin: auto;
+            border: 4px solid #c9a0dc;
+            background: #23252f;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background: #e8f8f5;
+        }
+
+        /* UI Overlays */
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            text-align: center;
+            background: rgba(26, 26, 46, 0.95);
+            z-index: 10;
+            overflow-y: auto;
+        }
+
+        .hidden { display: none !important; }
+
+        h1 {
+            font-family: 'Chakra Petch', sans-serif;
+            font-size: 2.2rem;
+            color: #ffd700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            margin-bottom: 15px;
+        }
+
+        h2 {
+            font-size: 1.4rem;
+            color: #fff;
+            margin-bottom: 10px;
+        }
+
+        p { font-size: 1rem; margin-bottom: 15px; line-height: 1.5; }
+
+        /* Setup Form Styles */
+        .form-group {
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .input-text {
+            width: 100%;
+            padding: 10px;
+            font-size: 1.1rem;
+            border-radius: 10px;
+            border: 2px solid #ffd700;
+            text-align: center;
+            outline: none;
+            font-family: 'Mitr', sans-serif;
+        }
+
+        .avatar-selection {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 10px;
+        }
+
+        .avatar-option {
+            border: 3px solid #fff;
+            border-radius: 15px;
+            padding: 10px;
+            cursor: pointer;
+            background: rgba(255,255,255,0.1);
+            transition: all 0.2s;
+            width: 90px;
+        }
+
+        .avatar-option.selected {
+            border-color: #ffd700;
+            background: rgba(254, 202, 87, 0.3);
+            transform: scale(1.05);
+        }
+
+        .avatar-preview-box {
+            width: 50px;
+            height: 50px;
+            margin: 0 auto 5px auto;
+            position: relative;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #ff6b6b, #ff8e53);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1.2rem;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(255,107,107,0.4);
+            transition: transform 0.2s;
+            margin-top: 15px;
+        }
+        .btn:hover { transform: scale(1.05); }
+
+        /* HUD */
+        #hud {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            justify-content: space-between;
+            pointer-events: none;
+            z-index: 5;
+            font-family: 'Chakra Petch', sans-serif;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        .hud-item {
+            background: rgba(0,0,0,0.7);
+            padding: 6px 12px;
+            border-radius: 12px;
+            border: 1px solid #ffd700;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.9rem;
+        }
+
+        /* XP Bar */
+        #xp-container {
+            width: 100px;
+            background: #444;
+            height: 12px;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid #fff;
+            margin-left: 5px;
+        }
+        #xp-bar {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #4caf50, #8bc34a);
+            transition: width 0.3s;
+        }
+
+        /* Dialog UI */
+        #quiz-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.98);
+            color: #333;
+            padding: 20px;
+            border-top: 5px solid #ffd700;
+            z-index: 8;
+            border-radius: 20px 20px 0 0;
+            box-shadow: 0 -5px 25px rgba(0,0,0,0.3);
+        }
+        .quiz-title { font-weight: bold; color: #8e44ad; margin-bottom: 5px; font-size: 1.2rem;}
+        
+        #quiz-question {
+            font-size: 1.05rem;
+            font-weight: 500;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 8px;
+            border-left: 4px solid #ff6b6b;
+            text-align: left;
+        }
+
+        /* Whack-A-Answer Grid */
+        .hole-grid {
+            display: grid;
+            grid-template-columns: repeat(1, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        @media (min-width: 600px) {
+            .hole-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        .hole-btn {
+            background: #ecf0f1;
+            border: 3px solid #bdc3c7;
+            border-radius: 15px;
+            padding: 15px 12px;
+            font-size: 1rem;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            min-height: 90px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            transition: all 0.2s;
+            line-height: 1.4;
+            color: #2c3e50;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .hole-btn:active { transform: scale(0.96); }
+        .hole-btn.active {
+            background: #ffeaa7;
+            border-color: #fdcb6e;
+            color: #d35400;
+        }
+
+        /* D-Pad controls for Tablet/Mobile */
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            left: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            pointer-events: none;
+            z-index: 6;
+        }
+        .dpad-container {
+            display: grid;
+            grid-template-columns: repeat(3, 60px);
+            grid-template-rows: repeat(3, 60px);
+            gap: 5px;
+            pointer-events: auto;
+        }
+        .ctrl-btn {
+            background: rgba(255,255,255,0.85);
+            border: 3px solid #333;
+            border-radius: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #333;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        .ctrl-btn:active { background: #ffd700; }
+        
+        #btn-up { grid-column: 2; grid-row: 1; }
+        #btn-left { grid-column: 1; grid-row: 2; }
+        #btn-right { grid-column: 3; grid-row: 2; }
+        #btn-down { grid-column: 2; grid-row: 3; }
+
+        /* Map Overlay */
+        #map-overlay {
+            background: rgba(44, 62, 80, 0.95);
+        }
+        .map-grid {
+            display: grid;
+            grid-template-columns: repeat(1, 1fr);
+            gap: 12px;
+            width: 90%;
+            max-width: 500px;
+            margin: 15px 0;
+        }
+        .map-node {
+            padding: 12px;
+            background: #34495e;
+            border: 2px solid #7f8c8d;
+            border-radius: 10px;
+            text-align: left;
+            font-size: 0.95rem;
+        }
+        .map-node.current {
+            background: #e74c3c;
+            border-color: #ffd700;
+            animation: pulse 1s infinite alternate;
+        }
+        .map-node.cleared {
+            background: #27ae60;
+            border-color: #2ecc71;
+        }
+
+        #certificate-canvas {
+            display: none;
+        }
+
+        @keyframes pulse {
+            from { transform: scale(1); }
+            to { transform: scale(1.02); }
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- HUD -->
+    <div id="hud">
+        <div class="hud-item">❤️ ชีวิต: <span id="hud-lives">3</span></div>
+        <div class="hud-item">🪙 เหรียญ: <span id="hud-coins">0</span></div>
+        <div class="hud-item">
+            <span id="hud-player-display">ม.๕</span> (<span id="hud-level">ผู้เริ่มต้น</span>)
+            <div id="xp-container"><div id="xp-bar"></div></div>
+        </div>
+        <div class="hud-item" style="pointer-events: auto; cursor:pointer;" onclick="toggleMap()">🗺️ แผนที่โรงเรียน (M)</div>
+        <div class="hud-item">🏆 สูงสุด: <span id="hud-highscore">0</span></div>
+    </div>
+
+    <!-- Start / Character Creation Screen -->
+    <div id="start-screen" class="screen">
+        <h1>🕵️‍♂️ นักสืบถิ่นเซนต์โยเซฟ บางนา 🏫</h1>
+        <p style="max-width: 650px; text-align: justify; font-size: 0.95rem;">
+            <b>เนื้อเรื่อง:</b> เช้าวันหนึ่ง โรงเรียนเซนต์โยเซฟ บางนา เกิดเหตุการณ์ประหลาด... คำภาษาถิ่นกระจัดกระจายไปทั่วโรงเรียนเนื่องจากพายุลึกลับ ผู้อำนวยการจึงแต่งตั้งให้คุณเป็น <b>"นักสืบถิ่นเซนต์โยเซฟ บางนา"</b> ออกสำรวจผังจำลองโรงเรียน เพื่อถอดรหัสโจทย์ภาษาถิ่นเชิงวิเคราะห์ระดับ ม.5 ร่วมกับคณะครูและบุคลากร <br><br>
+            ⚠️ <b>โหมดท้าทายขั้นสุดยอด (ฝูงไก่เจ้าถิ่น 3 ตัว)</b>: ระวังตัวให้ดี! บัดนี้มี 🐓 **"ไก่เจ้าถิ่นเวอร์ชันเดินไวแยกทิศทางอิสระถึง 3 ตัว"** วิ่งพลุกพล่านสุ่มจิกอาหารรอบบริเวณผังโรงเรียน หากเดินชนตอนสำรวจจะเสียพลังชีวิต 1 ดวง (แต่ขณะเปิดหน้าต่างทำภารกิจตอบคำถาม ไก่จะทำอะไรคุณไม่ได้) พิเศษสุด! เหรียญทองเกิดใหม่ทุกๆ 1 นาที สะสมครบทุกๆ 10 เหรียญ รับโบนัสฟรี 10 XP!
+        </p>
+
+        <!-- กรอกชื่อข้อมูลผู้เล่น -->
+        <div class="form-group">
+            <h2>1. ระบุชื่อนักสืบ ม.๕</h2>
+            <input type="text" id="player-name-input" class="input-text" placeholder="พิมพ์ชื่อของคุณที่นี่..." maxlength="15" value="สมชาย">
+        </div>
+
+        <!-- เลือกหน้าตาเพศ/ตัวละคร -->
+        <div class="form-group">
+            <h2>2. เลือกรูปแบบชุดนักเรียน</h2>
+            <div class="avatar-selection">
+                <div class="avatar-option selected" id="opt-avatar1" onclick="selectAvatar(1)">
+                    <div class="avatar-preview-box" id="preview-av1"></div>
+                    <div>แบบที่ ๑</div>
+                </div>
+                <div class="avatar-option" id="opt-avatar2" onclick="selectAvatar(2)">
+                    <div class="avatar-preview-box" id="preview-av2"></div>
+                    <div>แบบที่ ๒</div>
+                </div>
+            </div>
+        </div>
+
+        <button class="btn" onclick="startGame()">เริ่มภารกิจสำรวจโรงเรียน</button>
+    </div>
+
+    <!-- Dialog / Quiz Overlay -->
+    <div id="quiz-overlay" class="hidden">
+        <div class="quiz-title" id="quiz-npc-name">NPC กำลังพูด...</div>
+        <p id="quiz-question">คำถามภาษาถิ่นจะปรากฏตรงนี้</p>
+        <div class="hole-grid" id="quiz-options">
+            <!-- ตัวเลือกจะผุดขึ้นสลับโดยไม่มีคำว่ารูหรือหลุม -->
+        </div>
+    </div>
+
+    <!-- Map Overlay -->
+    <div id="map-overlay" class="screen hidden" onclick="toggleMap()">
+        <h1>🗺️ ผังภารกิจรอบบริเวณโรงเรียน</h1>
+        <div class="map-grid">
+            <div class="map-node" id="node-1">🚩 จุดที่ ๑ : หน้าเสาธง (เริ่มต้นภารกิจ รู้จักภาษาถิ่นไทย)</div>
+            <div class="map-node" id="node-2">📚 จุดที่ ๒ : ห้องสมุด (จำแนกคำภาษาถิ่นแต่ละภูมิภาค)</div>
+            <div class="map-node" id="node-3">🍜 จุดที่ ๓ : โรงอาหาร (ตีความความหมายของคำจากสถานการณ์)</div>
+            <div class="map-node" id="node-4">🏫 จุดที่ ๔ : อาคารเรียน (วิเคราะห์การใช้ภาษาถิ่นให้เหมาะสม)</div>
+            <div class="map-node" id="node-5">👑 จุดที่ ๕ : หอประชุมเซนต์โยเซฟ (เผชิญหน้าผู้พิทักษ์ภาษาถิ่น - บอส)</div>
+        </div>
+        <p style="margin-top: 10px; color: #aaa;">(คลิกตรงไหนก็ได้เพื่อปิดผังแผนที่และเดินสำรวจต่อ)</p>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="gameover-screen" class="screen hidden">
+        <h1 style="color: #e74c3c;">❌ ภารกิจล้มเหลว!</h1>
+        <p>คุณชนไก่อุปสรรคจนพลังชีวิตหมดลงแล้ว ลองกลับมาเริ่มสำรวจใหม่อีกครั้งนะนักสืบ!</p>
+        <button class="btn" onclick="restartGame()">ลองใหม่อีกครั้ง</button>
+    </div>
+
+    <!-- Victory / Certificate Screen -->
+    <div id="victory-screen" class="screen hidden">
+        <h1 style="color: #2ecc71;">🎉 ยินดีด้วย! พิชิตภารกิจสำเร็จ</h1>
+        <p>คุณได้ผ่านการทดสอบอันเข้มข้นแบบสุ่มจากผู้พิทักษ์ภาษาถิ่นและหลบหลีกอุปสรรคได้ครบถ้วน!</p>
+        <div id="cert-wrapper" style="margin: 15px 0; width: 100%; display: flex; justify-content: center;">
+            <canvas id="certificate-canvas" width="600" height="440" style="display: block; width: 100%; max-width: 450px; border: 5px double #ffd700; background: #fff;"></canvas>
+        </div>
+        <button class="btn" onclick="downloadCertificate()">💾 ดาวน์โหลดใบประกาศ (PNG)</button>
+        <button class="btn" style="background: #7f8c8d;" onclick="restartGame()">เล่นอีกครั้ง</button>
+    </div>
+
+    <!-- Tablet D-Pad Controls (Top-down Movement) -->
+    <div id="controls">
+        <div class="dpad-container">
+            <div class="ctrl-btn" id="btn-up">▲</div>
+            <div class="ctrl-btn" id="btn-left">◀</div>
+            <div class="ctrl-btn" id="btn-right">▶</div>
+            <div class="ctrl-btn" id="btn-down">▼</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- Web Audio Synthetic Sound Engine ---
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+
+    function initAudio() {
+        if (!audioCtx) audioCtx = new AudioCtx();
+    }
+
+    function playSound(type) {
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        const now = audioCtx.currentTime;
+
+        if (type === 'walk') {
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(100, now);
+            gain.gain.setValueAtTime(0.08, now);
+            gain.gain.exponentialRampToValueAtTime(0.005, now + 0.08);
+            osc.start(now); osc.stop(now + 0.08);
+        } else if (type === 'correct') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(523.25, now);
+            osc.frequency.setValueAtTime(659.25, now + 0.08);
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.exponentialRampToValueAtTime(0.005, now + 0.25);
+            osc.start(now); osc.stop(now + 0.25);
+        } else if (type === 'wrong') {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(180, now);
+            osc.frequency.linearRampToValueAtTime(90, now + 0.35);
+            gain.gain.setValueAtTime(0.25, now);
+            gain.gain.exponentialRampToValueAtTime(0.005, now + 0.35);
+            osc.start(now); osc.stop(now + 0.35);
+        } else if (type === 'hit') {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(120, now);
+            gain.gain.setValueAtTime(0.3, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+            osc.start(now); osc.stop(now + 0.2);
+        } else if (type === 'bell') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(587.33, now);
+            gain.gain.setValueAtTime(0.15, now);
+            gain.gain.exponentialRampToValueAtTime(0.005, now + 0.4);
+            osc.start(now); osc.stop(now + 0.4);
+        }
+    }
+
+    // --- คลังคำถามวิเคราะห์สุ่ม ระดับ ม.5 ---
+    const rawQuestionPool = {
+        1: [
+            { q: "พิจารณาคำว่า 'กึด' (เหนือ) และ 'เว้า' (อีสาน) ข้อใดอธิบายโครงสร้างทางสัทศาสตร์เมื่อเปรียบเทียบกับภาษาไทยกลางได้ถูกต้องที่สุด?", a: ["'กึด' เปลี่ยนระดับเสียงสระ, 'เว้า' เปลี่ยนโครงสร้างพยัญชนะต้น", "'กึด' เปลี่ยนเสียงสระจาก อึ เป็น สระประสม, 'เว้า' เปลี่ยนรูปวรรณยุกต์", "'กึด' คงพยัญชนะต้นเดิมแต่เปลี่ยนเสียงสระสั้น, 'เว้า' มีการกลายเสียงพยัญชนะต้นคู่ควบ"], c: 2 },
+            { q: "หากพิจารณาคำว่า 'กาด' ในภาษาถิ่นเหนือ เหตุใดคำนี้จึงมีความหมายลึกซึ้งกว่าเพียงแค่คำว่า 'ตลาด' ในเชิงมานุษยวิทยา?", a: ["เป็นศูนย์กลางวัฒนธรรมและการแลกเปลี่ยนระบบเครือญาติวิถีชุมชน", "ใช้เฉพาะการซื้อขายสินค้าเกษตรกรรมในอดีตเท่านั้น", "หมายถึงสถานที่ประกอบพิธีกรรมทางศาสนาประจำหมู่บ้าน"], c: 0 },
+            { q: "คำว่า 'แหลง' ในภาษาถิ่นใต้ มีข้อสันนิษฐานทางนิรุกติศาสตร์ว่าเชื่อมโยงและกลายเสียงมาจากคำในภาษาโบราณคำใด?", a: ["แถลง (เขมรโบราณ)", "แผลง (ไทเดิม)", "เล่า (มลายู)"], c: 0 },
+            { q: "ปรากฏการณ์ 'การลดพยางค์' ในภาษาถิ่นใต้ เช่นคำว่า 'ตลาด' เป็น 'หลาด' สะท้อนธรรมชาติต่างภาษาถิ่นในด้านใดชัดเจนที่สุด?", a: ["ค่านิยมการประหยัดถ้อยคำเพื่อความสุภาพตามบริบท", "จังหวะของภาษา (Stress-timed) ที่เน้นเฉพาะพยางค์ท้าย", "ข้อจำกัดด้านสรีระการออกเสียงของประชากรภาคใต้"], c: 1 },
+            { q: "ข้อใดคือความแตกต่างเชิงระบบไวยากรณ์ที่เด่นชัดที่สุดระหว่าง 'ภาษาไทยกลาง' และ 'ภาษาถิ่นอีสาน'?", a: ["ภาษาถิ่นอีสานไม่มีคำลักษณนามใช้ในประโยคทั่วไป", "ภาษาถิ่นอีสานมีการสลับตำแหน่งของคำขยายไว้ข้างหน้าคำนาม", "ภาษาถิ่นอีสานมีการใช้คำช่วยหน้ากริยาและโครงสร้างปฏิเสธที่เฉพาะตัว เช่น บ่"], c: 2 },
+            { q: "ปรากฏการณ์แปรเสียงวรรณยุกต์แยกตามถิ่นที่อยู่อาศัย (Dialect Splitting) สะท้อนให้เห็นข้อใดเด่นชัดที่สุด?", a: ["ภาษาไม่มีการเปลี่ยนแปลงถ้าอยู่โดดเดี่ยว", "สภาพภูมิประเทศและสังคมที่ตัดขาดแยกจากกันทำให้ระบบเสียงเปลี่ยนไปคนละทิศทาง", "ความพยายามตั้งใจออกเสียงให้ผิดเพี้ยนไปจากมาตรฐานส่วนกลาง"], c: 1 }
+        ],
+        2: [
+            { q: "หากต้องการจำแนกวรรณยุกต์ภาษาถิ่นเพื่อทำดัชนีห้องสมุด ข้อใดระบุจำนวนเสียงวรรณยุกต์ถิ่นเหนือ (เชียงใหม่) และถิ่นอีสาน (ขอนแก่น) ได้ถูกต้องวิชาการ?", a: ["ถิ่นเหนือมี 5 เสียง, ถิ่นอีสานมี 5 เสียง", "ถิ่นเหนือมี 6 เสียง, ถิ่นอีสานมี 6 เสียง", "ถิ่นเหนือมี 6 เสียง, ถิ่นอีสานมี 7 เสียง"], c: 1 },
+            { q: "วรรณกรรมท้องถิ่นภาคใต้ มักปรากฏคำว่า 'ขี้หก' ในบทสนทนา ตัวบทนี้ส่งผลเชิงอรรถรสและการตีความบริบทตัวละครอย่างไร?", a: ["แสดงถึงความขัดแย้งรุนแรงจนไม่สามารถประนีประนอมได้", "สะท้อนความตรงไปตรงมาและสายสัมพันธ์ที่สนิทสนมในวัฒนธรรมถิ่น", "เป็นคำต้องห้ามที่ห้ามใช้ในวรรณกรรมราชสำนักภาคใต้"], c: 1 },
+            { q: "คำว่า 'บ่อนัด' (ภูเก็ต) และ 'มะขะนัด' (เชียงใหม่) ที่หมายถึง สับปะรด สะท้อนอิทธิพลการยืมคำและการค้าขายในอดีตอย่างไร?", a: ["ถิ่นเหนือรับจากพม่า ส่วนถิ่นใต้รับอิทธิพลมาจากตะวันตก/มลายู", "ทั้งสองถิ่นคิดค้นคำขึ้นเองโดยอิงจากลักษณะหนามของผลไม้", "เป็นการแปลงเสียงมาจากภาษาบาลีสันสกฤตในคัมภีร์พุทธศาสนา"], c: 0 },
+            { q: "คำว่า 'บักหุ่ง' (อีสาน) มีรากศัพท์และการประสมคำที่สะท้อนแนวคิดใดในการตั้งชื่อพืชพันธุ์?", a: ["ตั้งชื่อตามสถานที่เพาะปลูกครั้งแรกในอดีต", "ตั้งชื่อตามรูปทรงกลมยาวและสีของเนื้อภายในที่สว่างเหมือนรุ่งอรุณ", "ยืมคำมาจากภาษาฝรั่งเศสในยุคอาณานิคม"], c: 1 },
+            { q: "การศึกษาภาษาถิ่นในห้องสมุดช่วยป้องกันเอกสารโบราณจากการ 'สูญบริบท' (Loss of Context) อย่างไร?", a: ["ช่วยให้แปลงอักษรโบราณเป็นตัวเลขพิมพ์ได้ง่ายขึ้น", "ทำให้เข้าใจความหมายที่แท้จริงตามค่านิยมและวิถีชีวิตดั้งเดิมของยุคสมัยนั้น", "ช่วยระบุอายุของกระดาษที่ใช้บันทึกได้อย่างแม่นยำ"], c: 1 }
+        ],
+        3: [
+            { q: "ลูกค้าสั่ง 'ตำบักหุ่งบ่ใส่พริก' แต่แม่ค้าเผลอใส่พริก 1 เม็ด ลูกค้าชาวอีสานอุทานว่า 'กะยังว่าบ่ใส่พริก' คำว่า 'กะยังว่า' แสดงสารเจตนา (Illocutionary act) ใด?", a: ["การขอโทษในความผิดพลาดที่เกิดขึ้น", "การย้ำประธานและเน้นความต้องการเดิมด้วยความอัดอั้นเล็กน้อย", "การชื่นชมที่แม่ค้าใส่พริกให้นิดหน่อยพอสวยงาม"], c: 1 },
+            { q: "คำว่า 'หรอยแรง' ในบริบทอาหารใต้ มีระดับความหมายและอารมณ์ความรู้สึกที่แตกต่างจากคำว่า 'หรอย' เฉยๆ อย่างไร?", a: ["'หรอยแรง' หมายถึง อาหารนั้นรสจัดเกินไปจนทานไม่ได้", "'หรอยแรง' แสดงการยอมรับขั้นสูงสุดที่รวมถึงความพึงพอใจในบรรยากาศและรสชาติอย่างลึกซึ้ง", "'หรอยแรง' เป็นคำสแลงวัยรุ่นที่ห้ามผู้ใหญ่นำไปพูดเด็ดขาด"], c: 1 },
+            { q: "คำว่า 'บักมี่' (ขนุน) ในภาษาอีสาน หากนำไปวิเคราะห์เปรียบเทียบกับคำว่า 'บัก' ที่ใช้นำหน้าชื่อผู้ชาย สะท้อนแนวคิดทางสังคมด้านใด?", a: ["การแบ่งแยกชนชั้นระหว่างพืชและมนุษย์อย่างเด็ดขาด", "การใช้คำบุรุษสรรพนามร่วมกับการให้เพศสภาพแก่สิ่งของรอบตัวในวัฒนธรรม", "ความเชื่อเรื่องสิ่งศักดิ์สิทธิ์ที่สถิตอยู่ในผลไม้ประจำหมู่บ้าน"], c: 1 },
+            { q: "การที่ชาวล้านนาชวนรับประทาน 'ข้าวงาย' แทนที่จะใช้คำว่า 'ข้าวเช้า' สะท้อนระบบการนับเวลาแบบดั้งเดิมอย่างไร?", a: ["นับตามตำแหน่งดวงอาทิตย์ที่เริ่มเงยขึ้นทาบทอขอบฟ้า", "นับตามเวลาที่พระสงฆ์ออกบิณฑบาตเสร็จสิ้น", "เป็นการกำหนดช่วงเวลาตามฤดูกาลเก็บเกี่ยวประจำปี"], c: 0 },
+            { q: "ถ้าสั่ง 'น้ำชุบ' ในร้านอาหารใต้ แต่ได้น้ำพริกผักสด แทนที่จะเป็นน้ำซุปต้มจืด ปรากฏการณ์นี้เรียกว่าอะไรทางภาษาศาสตร์?", a: ["การขยายตัวของความหมาย (Broadening)", "การย้ายจำพวกความหมายตามบริบทวัฒนธรรม (Semantic Shift)", "ความผิดพลาดในการสื่อสารประชากรต่างแดน"], c: 1 }
+        ],
+        4: [
+            { q: "ประโยคในข้อใดที่แสดงถึงการ 'ลักลั่นทางภาษา' (Code-mixing) ที่ไม่สอดคล้องกับโครงสร้างและสัมพันธภาพของภาษาถิ่น?", a: ["ข้อยเป็นคนอีสาน มักเว้าลาวกับอีแม่", "เฮาเป็นคนเจียงใหม่ ชอบกินแกงโฮะจาดลำ", "นุ้ยเป็นคนใต้ ชอบกินส้มตำบักหุ่งหรอยแรงจังฮู้"], c: 2 },
+            { q: "คำว่า 'โคม' ในภาษาถิ่นใต้หมายถึง 'กะละมัง' แต่ในภาษาไทยกลางหมายถึง 'ตะเกียง/เครื่องให้แสงสว่าง' ข้อใดอธิบายปรากฏการณ์นี้ได้ถูกต้อง?", a: ["กิริยาคำพ้องรูปพ้องเสียงที่มีรากศัพท์มาจากคนละภาษาอย่างสิ้นเชิง", "ปรากฏการณ์คำคำเดียวแต่พัฒนาความหมายต่างทิศทางตามลักษณะรูปทรงภาชนะที่รองรับ", "ความเข้าใจผิดในการจดบันทึกของพจนานุกรมในอดีต"], c: 1 },
+            { q: "เพื่อนนักเรียนจากลำปางบอกว่ารู้สึก 'กึดนัก' ก่อนสอบปลายภาค ข้อใดคือการปลอบใจที่เข้าใจวัจนภาษาของเพื่อนได้ตรงจุดที่สุด?", a: ["'ไม่ต้องคิดเงินหรอก ข้อสอบนี้สอบฟรีไม่มีค่าใช้จ่าย'", "'อย่าคิดมากเลยนะเพื่อน วางใจให้สบายแล้วค่อยๆ ทบทวนกัน'", "'ถ้าเรียนหนักเกินไป ก็โดดเรียนบ้างก็ได้นะ'"], c: 1 },
+            { q: "การใช้คำว่า 'จังหัน' ในภาษาถิ่นอีสานเพื่อหมายถึงภัตตาหารเช้าของพระสงฆ์ สะท้อนความสัมพันธ์ระหว่างภาษาถิ่นกับศาสนาอย่างไร?", a: ["การรักษาคำไทยโบราณ (Archaism) ไว้ในระบบคำราชาศัพท์และคำทางศาสนาของท้องถิ่น", "การยืมคำจากภาษาบาลีโดยตรงโดยไม่มีการเปลี่ยนแปลงความหมายเลย", "การสร้างคำแสลงเพื่อใช้เฉพาะกลุ่มผู้สูงอายุในวัด"], c: 0 },
+            { q: "หากพิจารณาคำว่า 'แล่น' ที่แปลว่า วิ่ง ในภาษาอีสาน เทียบกับภาษาไทยกลางที่หมายถึง การเคลื่อนที่ของยานพาหนะ (เรือแล่น) สะท้อนความลื่นไหลทางภาษาอย่างไร?", a: ["ภาษาถิ่นอีสานใช้คำผิดบริบทตามหลักไวยากรณ์", "การลดรูปความหมายให้แคบลงในภาษาไทยกลาง แต่คงความหมายกว้างเชิงกิริยาไว้ในภาษาถิ่น", "การยืมคำจากภาษาตะวันตกมาใช้พัฒนาเทคโนโลยีขนส่ง"], c: 1 }
+        ],
+        5: [
+            { q: "คำว่า 'ลำ' (เหนือ), 'หรอย' (ใต้), 'แซ่บ' (อีสาน) แม้แปลว่า อร่อย เหมือนกัน แต่ในแง่ของ 'สุนทรียรสทางอาหาร' ข้อใดอธิบายความต่างได้ถูกต้อง?", a: ["'ลำ' เน้นรสกลมกล่อมเปรี้ยวหวาน, 'หรอย' เน้นรสจัดจ้านและเครื่องเทศ, 'แซ่บ' เน้นความนัวเด่นชัดของน้ำปลาร้าหรือวัตถุดิท้องถิ่น", "'ลำ' คือจืด, 'หรอย' คือเค็ม, 'แซ่บ' คือเผ็ดอย่างเดียว", "ไม่มีความแตกต่างกันเลยในแง่การรับรู้รสชาติสัมผัส"], c: 0 },
+            { q: "เหตุใดคำว่า 'คิดถึง' ในถิ่นเหนือใช้ 'กึดฮอด' ส่วนอีสานใช้ 'คึดฮอด' ปรากฏการณ์สัทศาสตร์นี้อธิบายว่าอย่างไร?", a: ["เป็นคำพ้องเสียงที่ไม่เกี่ยวข้องกันในเชิงประวัติศาสตร์", "การแปรของเสียงพยัญชนะต้นและสระในตระกูลภาษาไทตามเขตภูมิศาสตร์ (Phonetic Variation)", "ภาคเหนือยืมคำมาจากภาคอีสานไปใช้เปลี่ยนเสียงตามใจชอบ"], c: 1 },
+            { q: "การกล่าวคำว่า 'ยินดีต้อนรับเจ้า' ในภาษาเหนือ มีโครงสร้างคำลงท้าย (Particle) ที่ทำหน้าที่สะท้อนมิติสังคมเรื่องใด?", a: ["ความเข้มงวดในการแบ่งระดับชนชั้นทางเศรษฐกิจอย่างรุนแรง", "การแสดงความสุภาพ อ่อนโยน และเสริมสร้างสัมพันธภาพอันดีตามจริยธรรมชุมชน", "การบังคับใช้กฎหมายราชสำนักโบราณในอดีต"], c: 1 },
+            { q: "ในฐานะนักเรียน ม.5 ข้อใดวิเคราะห์ 'คุณค่าและบทบาทที่แท้จริงของการดำรงอยู่ของภาษาถิ่นไทย' ในยุคโลกาภิวัตน์ได้ลึกซึ้งที่สุด?", a: ["ช่วยให้ทำข้อสอบระดับชาติวิชาภาษาไทยได้คะแนนเต็มร้อย", "เป็นเครื่องมือสืบทอดภูมิปัญญา อัตลักษณ์ชาติพันธุ์ และความหลากหลายทางวัฒนธรรมที่ภาษามาตรฐานไม่สามารถทดแทนได้", "ช่วยประหยัดงบประมาณการจัดพิมพ์แบบเรียนภาษาไทยประจำปี"], c: 1 },
+            { q: "คำว่า 'สาย' หรือ 'เชือก' ในภาษาถิ่นใต้ มีการใช้คำร่วมราก (Cognate) ที่บ่งบอกวิธีคิดในการจัดหมวดหมู่สิ่งของอย่างไร?", a: ["จัดตามลักษณะรูปทรงยาวและลักษณะการนำไปผูกมัดหรือเชื่อมโยงวัตถุสิ่งของ", "สุ่มคำขึ้นมาโดยไม่มีเกณฑ์การจัดหมวดหมู่ใดๆ ทั้งสิ้น", "ยืมคำมาจากภาษาจีนโบราณในระบบมาตราชั่งตวงวัด"], c: 0 }
+        ]
+    };
+
+    let currentQuestionsPool = {};
+
+    function prepareRandomQuestions() {
+        currentQuestionsPool = {};
+        Object.keys(rawQuestionPool).forEach(zoneId => {
+            let questions = [...rawQuestionPool[zoneId]];
+            for (let i = questions.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [questions[i], questions[j]] = [questions[j], questions[i]];
+            }
+            currentQuestionsPool[zoneId] = questions.slice(0, 5);
+        });
+    }
+
+    // --- การตั้งค่าระบบ Canvas & ผังโรงเรียน (Top-Down Map) ---
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    let gameState = "start"; 
+    let playerName = "นักสืบ ม.๕";
+    let selectedAvatarId = 1;
+    let score = 0;
+    let coins = 0;
+    let coinThresholdCounter = 0; 
+    let lives = 3;
+    let xp = 0;
+    let levelRank = "ผู้เริ่มต้น";
+    let currentActiveZone = 1; 
+    let highscore = localStorage.getItem("sjb_topdown_highscore") || 0;
+    document.getElementById("hud-highscore").innerText = highscore;
+
+    let quizMode = false;
+    let currentQuestionIdx = 0;
+    let whackTimer = 0;
+    let invulnerabilityFrames = 0; 
+    let coinRespawnTimer = 0; 
+
+    const player = {
+        x: 150, y: 400,
+        width: 48, height: 48,
+        speed: 4, animFrame: 0,
+        moving: false
+    };
+
+    // --- อาร์เรย์ระบบ "ไก่เจ้าถิ่น 3 ตัว" ที่แยกพิกัด ความเร็ว และทิศทางอย่างอิสระ ---
+    let chickens = [];
+
+    function initChickens() {
+        chickens = [
+            { x: 350, y: 250, width: 32, height: 32, vx: 2.8, vy: 2.2, animFrame: 0, changeDirTimer: 0, peckTimer: 0 },
+            { x: 550, y: 450, width: 32, height: 32, vx: -2.5, vy: 3.0, animFrame: 10, changeDirTimer: 0, peckTimer: 0 },
+            { x: 750, y: 350, width: 32, height: 32, vx: 3.2, vy: -1.8, animFrame: 20, changeDirTimer: 0, peckTimer: 0 }
+        ];
+    }
+
+    const schoolZones = {
+        1: { name: "หน้าเสาธง", x: 200, y: 380, radius: 60, color: "#3498db", npcLabel: "ครูภาษาไทย", cleared: false },
+        2: { name: "ห้องสมุด", x: 450, y: 200, radius: 60, color: "#9b59b6", npcLabel: "บรรณารักษ์", cleared: false },
+        3: { name: "โรงอาหาร", x: 450, y: 550, radius: 60, color: "#e67e22", npcLabel: "แม่ค้าโรงอาหาร", cleared: false },
+        4: { name: "อาคารเรียน", x: 700, y: 250, radius: 60, color: "#1abc9c", npcLabel: "นักเรียน ม.๕", cleared: false },
+        5: { name: "หอประชุมใหญ่", x: 880, y: 400, radius: 70, color: "#d35400", npcLabel: "ผู้พิทักษ์ภาษาถิ่น (บอส)", cleared: false }
+    };
+
+    let schoolDecorations = [
+        { x: 320, y: 250, size: 30 },
+        { x: 340, y: 480, size: 35 },
+        { x: 600, y: 380, size: 40 },
+        { x: 620, y: 150, size: 28 },
+        { x: 780, y: 520, size: 32 }
+    ];
+
+    const baseCoinPositions = [
+        { x: 320, y: 380 }, { x: 450, y: 350 }, { x: 450, y: 450 },
+        { x: 580, y: 220 }, { x: 580, y: 500 }, { x: 700, y: 400 },
+        { x: 800, y: 300 }
+    ];
+    let mapCoins = [];
+
+    function initCoins() {
+        mapCoins = baseCoinPositions.map(pos => ({ x: pos.x, y: pos.y, collected: false }));
+    }
+
+    const keys = {};
+    window.addEventListener("keydown", (e) => {
+        keys[e.code] = true;
+        if(e.code === 'KeyM') toggleMap();
+        initAudio();
+    });
+    window.addEventListener("keyup", (e) => keys[e.code] = false);
+
+    function setupMobileControls() {
+        const bindDpad = (id, code) => {
+            const el = document.getElementById(id);
+            el.addEventListener("touchstart", (e) => { e.preventDefault(); keys[code] = true; initAudio(); });
+            el.addEventListener("touchend", (e) => { e.preventDefault(); keys[code] = false; });
+            el.addEventListener("mousedown", () => { keys[code] = true; initAudio(); });
+            el.addEventListener("mouseup", () => keys[code] = false);
+        };
+        bindDpad("btn-up", "ArrowUp");
+        bindDpad("btn-left", "ArrowLeft");
+        bindDpad("btn-right", "ArrowRight");
+        bindDpad("btn-down", "ArrowDown");
+    }
+    setupMobileControls();
+
+    function drawAvatarPreviews() {
+        const renderThumb = (canvasId, typeId) => {
+            const canv = document.createElement("canvas");
+            canv.width = 50; canv.height = 50;
+            const ctxT = canv.getContext("2d");
+            drawStudentSprite(ctxT, 25, 25, typeId, 0);
+            document.getElementById(canvasId).innerHTML = "";
+            document.getElementById(canvasId).appendChild(canv);
+        };
+        renderThumb("preview-av1", 1);
+        renderThumb("preview-av2", 2);
+    }
+    setTimeout(drawAvatarPreviews, 100);
+
+    function selectAvatar(id) {
+        selectedAvatarId = id;
+        document.getElementById("opt-avatar1").classList.toggle("selected", id === 1);
+        document.getElementById("opt-avatar2").classList.toggle("selected", id === 2);
+    }
+
+    function drawStudentSprite(c, cx, cy, type, frame) {
+        let bobbing = Math.sin(frame) * 2;
+        
+        c.fillStyle = (type === 1) ? "#003399" : "#660022"; 
+        c.fillRect(cx - 12, cy + 10 + bobbing, 8, 12);
+        c.fillRect(cx + 4, cy + 10 + bobbing, 8, 12);
+
+        c.fillStyle = "#ffffff";
+        c.fillRect(cx - 15, cy - 8 + bobbing, 30, 20);
+        c.strokeStyle = "#cccccc";
+        c.lineWidth = 1;
+        c.strokeRect(cx - 15, cy - 8 + bobbing, 30, 20);
+
+        c.fillStyle = (type === 1) ? "#795548" : "#003399";
+        c.fillRect(cx - 15, cy + 8 + bobbing, 30, 3); 
+
+        c.fillStyle = "#ffdbac";
+        c.beginPath();
+        c.arc(cx, cy - 20 + bobbing, 14, 0, Math.PI * 2);
+        c.fill();
+
+        c.fillStyle = "#2c3e50";
+        if(type === 1) {
+            c.fillRect(cx - 14, cy - 34 + bobbing, 28, 12);
+        } else {
+            c.beginPath();
+            c.arc(cx - 12, cy - 16 + bobbing, 6, 0, Math.PI*2);
+            c.arc(cx + 12, cy - 16 + bobbing, 6, 0, Math.PI*2);
+            c.fill();
+            c.fillRect(cx - 14, cy - 34 + bobbing, 28, 14);
+        }
+
+        c.fillStyle = "#333";
+        c.beginPath();
+        c.arc(cx - 5, cy - 20 + bobbing, 2, 0, Math.PI*2);
+        c.arc(cx + 5, cy - 20 + bobbing, 2, 0, Math.PI*2);
+        c.fill();
+    }
+
+    function drawChickenObstacle(c, cx, cy, frame, peckPhase) {
+        c.save();
+        c.translate(cx, cy);
+
+        let bob = Math.sin(frame * 1.5) * 2;
+        let neckPeck = peckPhase ? Math.sin(Date.now() * 0.02) * 4 : 0;
+
+        c.strokeStyle = "#e67e22";
+        c.lineWidth = 2;
+        c.beginPath();
+        c.moveTo(-6, 8); c.lineTo(-6, 16);
+        c.moveTo(6, 8); c.lineTo(6, 16);
+        c.stroke();
+
+        c.fillStyle = "#ffffff";
+        c.beginPath();
+        c.ellipse(0, 2 + bob, 15, 11, 0, 0, Math.PI * 2);
+        c.fill();
+        c.strokeStyle = "#ddd";
+        c.stroke();
+
+        c.fillStyle = "#f5f5f5";
+        c.beginPath();
+        c.ellipse(-2, 2 + bob, 8, 5, 0.2, 0, Math.PI * 2);
+        c.fill();
+
+        c.fillStyle = "#ffffff";
+        c.beginPath();
+        c.moveTo(-13, bob);
+        c.lineTo(-20, -8 + bob);
+        c.lineTo(-8, -2 + bob);
+        c.fill();
+
+        c.fillStyle = "#ffffff";
+        c.beginPath();
+        c.arc(12, -8 + bob + neckPeck, 7, 0, Math.PI * 2);
+        c.fill();
+
+        c.fillStyle = "#e74c3c";
+        c.beginPath();
+        c.arc(12, -15 + bob + neckPeck, 3, 0, Math.PI * 2);
+        c.arc(9, -14 + bob + neckPeck, 2.5, 0, Math.PI * 2);
+        c.fill();
+
+        c.fillStyle = "#f1c40f";
+        c.beginPath();
+        c.moveTo(18, -10 + bob + neckPeck);
+        c.lineTo(24, -7 + bob + neckPeck);
+        c.lineTo(17, -5 + bob + neckPeck);
+        c.fill();
+
+        c.restore();
+    }
+
+    function update() {
+        if (gameState !== "playing") return;
+
+        // ระบบเกิดเหรียญใหม่ในผังโรงเรียนทุกๆ 1 นาที
+        if (!quizMode) {
+            coinRespawnTimer++;
+            if (coinRespawnTimer >= 3600) {
+                initCoins(); 
+                coinRespawnTimer = 0;
+                playSound('bell');
+            }
+        }
+
+        // --- อัปเดตการเคลื่อนที่และการประมวลผลของไก่ทั้ง 3 ตัวอย่างอิสระแยกจากกัน ---
+        chickens.forEach((chicken, idx) => {
+            chicken.changeDirTimer--;
+            if (chicken.changeDirTimer <= 0) {
+                // สุ่มองศาทิศทางที่ต่างกันโดยสิ้นเชิงในแต่ละตัว
+                let angle = Math.random() * Math.PI * 2;
+                let speed = 2.4 + Math.random() * 1.5; 
+                chicken.vx = Math.cos(angle) * speed;
+                chicken.vy = Math.sin(angle) * speed;
+                chicken.changeDirTimer = 60 + Math.random() * 90; 
+            }
+
+            chicken.peckTimer--;
+            if (chicken.peckTimer <= 0 && Math.random() > 0.85) {
+                chicken.peckTimer = 25; 
+            }
+
+            if (chicken.peckTimer <= 0) {
+                chicken.x += chicken.vx;
+                chicken.y += chicken.vy;
+                chicken.animFrame += 0.18;
+            }
+
+            // ชนขอบแผนที่สะท้อนกลับแยกตัวกันไปคนละทาง
+            if (chicken.x < 30 || chicken.x > canvas.width - 30) chicken.vx *= -1;
+            if (chicken.y < 30 || chicken.y > canvas.height - 30) chicken.vy *= -1;
+        });
+
+        // หากกำลังอยู่ในโหมดตอบคำถาม จะตัดระบบควบคุมผู้เล่นและการชนเพื่อความปลอดภัย
+        if (quizMode) return;
+
+        if (invulnerabilityFrames > 0) invulnerabilityFrames--;
+
+        player.moving = false;
+        if (keys["ArrowLeft"]) { player.x -= player.speed; player.moving = true; }
+        if (keys["ArrowRight"]) { player.x += player.speed; player.moving = true; }
+        if (keys["ArrowUp"]) { player.y -= player.speed; player.moving = true; }
+        if (keys["ArrowDown"]) { player.y += player.speed; player.moving = true; }
+
+        if (player.moving) {
+            player.animFrame += 0.15;
+            if(Math.floor(player.animFrame) % 4 === 0) playSound('walk');
+        }
+
+        if (player.x < 20) player.x = 20;
+        if (player.x > canvas.width - 20) player.x = canvas.width - 20;
+        if (player.y < 20) player.y = 20;
+        if (player.y > canvas.height - 20) player.y = canvas.height - 20;
+
+        // ตรวจจับการชนไก่อุปสรรคตัวใดตัวหนึ่งใน 3 ตัว (เฉพาะขณะเดินปกติ)
+        if (invulnerabilityFrames === 0) {
+            for (let i = 0; i < chickens.length; i++) {
+                let chicken = chickens[i];
+                let distToChicken = Math.hypot(player.x - chicken.x, player.y - chicken.y);
+                if (distToChicken < 32) {
+                    lives--;
+                    invulnerabilityFrames = 60; 
+                    document.getElementById("hud-lives").innerText = lives;
+                    playSound('hit');
+                    alert(`🐓 โอ๊ย! คุณพลาดท่าโดนไก่เจ้าถิ่นตัวที่ ${i + 1} ชนเข้า เสียพลังชีวิต 1 ดวง! คอยหลบดีๆ นะ!`);
+                    
+                    if (lives <= 0) {
+                        gameState = "gameover";
+                        document.getElementById("gameover-screen").classList.remove("hidden");
+                        if(score > highscore) {
+                            localStorage.setItem("sjb_topdown_highscore", score);
+                        }
+                        break;
+                    }
+                    break; // โดนชนพร้อมกันนับแค่ครั้งเดียวในเฟรมนั้น
+                }
+            }
+        }
+
+        // ตรวจจับเก็บเหรียญบนทางเดิน
+        mapCoins.forEach(coin => {
+            if(!coin.collected) {
+                let dist = Math.hypot(player.x - coin.x, player.y - coin.y);
+                if(dist < 25) {
+                    coin.collected = true;
+                    coins++;
+                    coinThresholdCounter++; 
+                    score += 5;
+                    document.getElementById("hud-coins").innerText = coins;
+                    playSound('correct');
+
+                    if (coinThresholdCounter >= 10) {
+                        coinThresholdCounter = 0; 
+                        gainXp(10);
+                        alert("🪙 ยอดเยี่ยม! สะสมเหรียญทองครบ 10 เหรียญ ได้รับโบนัสพิเศษ 10 XP!");
+                    }
+                }
+            }
+        });
+
+        // ตรวจการสัมผัสโซนเพื่อเปิดระบบภารกิจคำถามประจำจุด
+        Object.keys(schoolZones).forEach(zoneId => {
+            let zone = schoolZones[zoneId];
+            let dist = Math.hypot(player.x - zone.x, player.y - zone.y);
+
+            if (dist < zone.radius) {
+                if (parseInt(zoneId) === currentActiveZone && !zone.cleared) {
+                    startZoneQuiz(parseInt(zoneId));
+                } else if (parseInt(zoneId) > currentActiveZone) {
+                    ctx.fillStyle = "rgba(0,0,0,0.7)";
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    player.y += 35; 
+                    alert(`🔒 บริเวณนี้ยังไม่เปิดระบบภารกิจ! คุณต้องผ่านการวิเคราะห์ข้อมูลที่จุด "${schoolZones[currentActiveZone].name}" ให้เสร็จสิ้นก่อน`);
+                }
+            }
+        });
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#e8f8f5"; 
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // วาดเส้นทางเชื่อมโยงในบริเวณโรงเรียน
+        ctx.strokeStyle = "#eaeded";
+        ctx.lineWidth = 40;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        ctx.beginPath();
+        ctx.moveTo(schoolZones[1].x, schoolZones[1].y);
+        ctx.lineTo(schoolZones[2].x, schoolZones[2].y);
+        ctx.lineTo(schoolZones[4].x, schoolZones[4].y);
+        ctx.lineTo(schoolZones[5].x, schoolZones[5].y);
+        ctx.moveTo(schoolZones[1].x, schoolZones[1].y);
+        ctx.lineTo(schoolZones[3].x, schoolZones[3].y);
+        ctx.lineTo(schoolZones[5].x, schoolZones[5].y);
+        ctx.stroke();
+
+        schoolDecorations.forEach(tree => {
+            ctx.fillStyle = "#27ae60";
+            ctx.beginPath();
+            ctx.arc(tree.x, tree.y, tree.size, 0, Math.PI*2);
+            ctx.fill();
+            ctx.fillStyle = "#2ecc71";
+            ctx.beginPath();
+            ctx.arc(tree.x - 5, tree.y - 5, tree.size * 0.7, 0, Math.PI*2);
+            ctx.fill();
+        });
+
+        // เรนเดอร์เหรียญบนพื้น
+        mapCoins.forEach(coin => {
+            if(!coin.collected) {
+                ctx.fillStyle = "#ffd700";
+                ctx.beginPath();
+                ctx.arc(coin.x, coin.y, 8, 0, Math.PI*2);
+                ctx.fill();
+                ctx.strokeStyle = "#d35400";
+                ctx.stroke();
+            }
+        });
+
+        // เรนเดอร์จุดทำเงื่อนไขภารกิจ
+        Object.keys(schoolZones).forEach(zoneId => {
+            let zone = schoolZones[zoneId];
+            
+            if(zone.cleared) {
+                ctx.fillStyle = "rgba(39, 174, 96, 0.2)";
+                ctx.strokeStyle = "#27ae60";
+            } else if(parseInt(zoneId) === currentActiveZone) {
+                ctx.fillStyle = "rgba(241, 196, 15, 0.3)";
+                ctx.strokeStyle = "#f1c40f";
+            } else {
+                ctx.fillStyle = "rgba(149, 165, 166, 0.2)";
+                ctx.strokeStyle = "#95a5a6";
+            }
+            
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI*2);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = zone.color;
+            ctx.fillRect(zone.x - 15, zone.y - 15, 30, 30);
+
+            ctx.fillStyle = "#2c3e50";
+            ctx.font = "bold 13px Mitr";
+            ctx.textAlign = "center";
+            ctx.fillText(zone.name, zone.x, zone.y - zone.radius - 8);
+            ctx.font = "11px Mitr";
+            ctx.fillText(`👤 ${zone.npcLabel}`, zone.x, zone.y + 28);
+        });
+
+        // --- วาดเรนเดอร์ฝูงไก่อุปสรรคทั้ง 3 ตัวออกเดินทางแยกกระจายทิศกันอย่างชัดเจน ---
+        chickens.forEach(chicken => {
+            drawChickenObstacle(ctx, chicken.x, chicken.y, chicken.animFrame, chicken.peckTimer > 0);
+        });
+
+        // เรนเดอร์ตัวละครเด็กนักเรียน ม.5 (เฉพาะเมื่อไม่ได้อยู่ในสถานะตอบคำถาม)
+        if (!quizMode) {
+            if (invulnerabilityFrames % 4 < 2) { 
+                drawStudentSprite(ctx, player.x, player.y, selectedAvatarId, player.animFrame);
+            }
+            ctx.fillStyle = "#111";
+            ctx.font = "bold 12px Mitr";
+            ctx.textAlign = "center";
+            ctx.fillText(playerName, player.x, player.y - 38);
+        }
+    }
+
+    function startZoneQuiz(zoneId) {
+        quizMode = true;
+        currentQuestionIdx = 0;
+        document.getElementById("quiz-overlay").classList.remove("hidden");
+        document.getElementById("quiz-npc-name").innerText = `💬 กำลังทำภารกิจกับ: ${schoolZones[zoneId].npcLabel}`;
+        showQuestion();
+    }
+
+    function showQuestion() {
+        let currentQuestions = currentQuestionsPool[currentActiveZone];
+        
+        if(currentQuestionIdx >= currentQuestions.length) {
+            quizMode = false;
+            schoolZones[currentActiveZone].cleared = true;
+            document.getElementById("node-" + currentActiveZone).classList.add("cleared");
+            document.getElementById("quiz-overlay").classList.add("hidden");
+            
+            if(currentActiveZone < 5) {
+                const hints = {
+                    1: "ภารกิจจุดนี้สำเร็จแล้ว! เดินตามทางเชื่อมไปหา 📚 บรรณารักษ์ ที่ห้องสมุด ด้านขวาบน เลยจ้า",
+                    2: "ยอดเยี่ยมมากนักสืบ! จุดต่อไปคือ 🍜 โรงอาหาร (เดินลงมาด้านล่าง) ไปพบพี่แม่ค้ากันเลย",
+                    3: "ทำได้ดีมาก! ตอนนี้ลองไปหา 👧 เพื่อนนักเรียน ม.๕ ที่อยู่ตรง จุดอาคารเรียนเรียนรวม นะ",
+                    4: "ตอบคำถามได้สุดยอด! ตอนนี้จุดสุดท้ายเปิดแล้ว 👑 หอประชุมใหญ่ (ขวาสุด) ผู้พิทักษ์ภาษาถิ่นรอนายอยู่!"
+                };
+                alert(`🎉 สำเร็จภารกิจถอดรหัสและวิเคราะห์ภาษาถิ่นในจุดนี้แล้ว!\n\nคำแนะนำถัดไป: ${hints[currentActiveZone]}`);
+                currentActiveZone++;
+                playSound('bell');
+            } else {
+                winGame();
+            }
+            return;
+        }
+
+        let qData = currentQuestions[currentQuestionIdx];
+        
+        if(currentActiveZone === 5) {
+            document.getElementById("quiz-npc-name").innerText = `👑 เผชิญหน้าบอส: ผู้พิทักษ์ภาษาถิ่น (ระดับด่านวิเคราะห์ข้อที่ ${currentQuestionIdx + 1}/5)`;
+        }
+
+        document.getElementById("quiz-question").innerText = `โจทย์ข้อที่ ${currentQuestionIdx + 1}: ${qData.q}`;
+        
+        const optionsContainer = document.getElementById("quiz-options");
+        optionsContainer.innerHTML = "";
+
+        qData.a.forEach((ans, idx) => {
+            const btn = document.createElement("button");
+            btn.className = "hole-btn active";
+            btn.innerText = ans;
+            btn.onclick = () => selectAnswer(idx, qData.c);
+            optionsContainer.appendChild(btn);
+        });
+
+        if(whackTimer) clearInterval(whackTimer);
+        whackTimer = setInterval(() => {
+            const buttons = document.querySelectorAll(".hole-btn");
+            buttons.forEach(b => {
+                if(Math.random() > 0.5) {
+                    b.classList.toggle("active");
+                    b.style.opacity = b.classList.contains("active") ? "1" : "0.3";
+                }
+            });
+        }, 1600);
+    }
+
+    function selectAnswer(chosenIdx, correctIdx) {
+        clearInterval(whackTimer);
+        let qData = currentQuestionsPool[currentActiveZone][currentQuestionIdx];
+
+        if(chosenIdx === correctIdx) {
+            playSound('correct');
+            score += 15;
+            gainXp(10);
+            alert("✅ วิเคราะห์ได้ถูกต้องแม่นยำ! คุณเข้าใจระบบโครงสร้างภาษา ได้รับ 10 XP");
+        } else {
+            playSound('wrong');
+            xp -= 10;
+            if (xp < 0) xp = 0; 
+            document.getElementById("xp-bar").style.width = `${(xp / 50) * 100}%`;
+            alert(`❌ วิเคราะห์คลาดเคลื่อน! ถูกหัก 10 XP (พลังชีวิตไม่ลด)\n\nเฉลยแนวคิดที่ถูก: ${qData.a[correctIdx]}`);
+        }
+
+        currentQuestionIdx++;
+        showQuestion();
+    }
+
+    function gainXp(amount) {
+        xp += amount;
+        if(xp >= 50) {
+            xp = 0;
+            upgradeLevelRank();
+        }
+        document.getElementById("xp-bar").style.width = `${(xp / 50) * 100}%`;
+    }
+
+    function upgradeLevelRank() {
+        const ranks = ["ผู้เริ่มต้น", "นักเรียนรู้", "ผู้ชำนาญ", "ผู้เชี่ยวชาญ", "ปรมาจารย์"];
+        let curIdx = ranks.indexOf(levelRank);
+        if(curIdx < ranks.length - 1) {
+            levelRank = ranks[curIdx + 1];
+            document.getElementById("hud-level").innerText = levelRank;
+            alert(`✨ สุดยอด! เลเวลอัปเป็นระดับแถวหน้า: "${levelRank}"`);
+        }
+    }
+
+    function toggleMap() {
+        if(gameState === "playing") {
+            gameState = "map";
+            document.getElementById("map-overlay").classList.remove("hidden");
+        } else if(gameState === "map") {
+            gameState = "playing";
+            document.getElementById("map-overlay").classList.add("hidden");
+        }
+    }
+
+    function startGame() {
+        initAudio();
+        let typedName = document.getElementById("player-name-input").value.trim();
+        if(typedName !== "") playerName = typedName;
+        document.getElementById("hud-player-display").innerText = playerName;
+
+        prepareRandomQuestions();
+        initCoins(); 
+        initChickens(); // เรียกตั้งค่าฝูงไก่ 3 ตัวเดินสุ่มแยกทาง
+        coinRespawnTimer = 0;
+        coinThresholdCounter = 0;
+
+        document.getElementById("start-screen").classList.add("hidden");
+        gameState = "playing";
+        currentActiveZone = 1;
+        score = 0; coins = 0; lives = 3; xp = 0;
+        levelRank = "ผู้เริ่มต้น";
+
+        Object.keys(schoolZones).forEach(z => {
+            schoolZones[z].cleared = false;
+            let nodeEl = document.getElementById("node-" + z);
+            if(nodeEl) nodeEl.className = "map-node";
+        });
+        document.getElementById("node-1").className = "map-node current";
+
+        document.getElementById("hud-lives").innerText = lives;
+        document.getElementById("hud-coins").innerText = coins;
+        document.getElementById("hud-level").innerText = levelRank;
+        document.getElementById("xp-bar").style.width = "0%";
+
+        player.x = 100; player.y = 380;
+
+        playSound('bell');
+        gameLoop();
+    }
+
+    function restartGame() {
+        document.getElementById("gameover-screen").classList.add("hidden");
+        document.getElementById("victory-screen").classList.add("hidden");
+        document.getElementById("start-screen").classList.remove("hidden");
+        gameState = "start";
+        drawAvatarPreviews();
+    }
+
+    function winGame() {
+        gameState = "victory";
+        document.getElementById("victory-screen").classList.remove("hidden");
+        generateCertificate();
+    }
+
+    function generateCertificate() {
+        const certCanvas = document.getElementById("certificate-canvas");
+        const cCtx = certCanvas.getContext("2d");
+
+        const today = new Date();
+        const thMonths = [
+            "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", 
+            "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
+        ];
+        
+        const currentDay = today.getDate();
+        const currentMonth = thMonths[today.getMonth()];
+        const currentYearBE = today.getFullYear() + 543;
+
+        let academicYear = currentYearBE;
+        if (today.getMonth() < 4) { 
+            academicYear = currentYearBE - 1;
+        }
+        
+        let generationNo = (academicYear - 2569) + 1;
+        if(generationNo < 1) generationNo = 1; 
+
+        cCtx.fillStyle = "#fffdf0";
+        cCtx.fillRect(0, 0, 600, 440);
+        
+        cCtx.strokeStyle = "#ffd700";
+        cCtx.lineWidth = 10;
+        cCtx.strokeRect(10, 10, 580, 420);
+        cCtx.strokeStyle = "#8e44ad";
+        cCtx.lineWidth = 2;
+        cCtx.strokeRect(20, 20, 560, 400);
+
+        cCtx.textAlign = "center";
+        cCtx.font = "bold 24px Chakra Petch";
+        cCtx.fillStyle = "#8e44ad";
+        cCtx.fillText("โรงเรียนเซนต์โยเซฟ บางนา", 300, 65);
+
+        cCtx.font = "bold 26px Mitr";
+        cCtx.fillStyle = "#d35400";
+        cCtx.fillText("ใบประกาศเกียรติคุณยอดนักสืบภาษาถิ่น", 300, 115);
+
+        cCtx.font = "16px Mitr";
+        cCtx.fillStyle = "#2c3e50";
+        cCtx.fillText("ยินดีด้วย! คุณได้รับตำแหน่งอันทรงเกียรติ", 300, 165);
+        
+        cCtx.font = "bold 24px Mitr";
+        cCtx.fillStyle = "#27ae60";
+        cCtx.fillText(`“นักสืบถิ่นเซนต์โยเซฟ บางนา”`, 300, 205);
+
+        cCtx.font = "bold 16px Mitr";
+        cCtx.fillStyle = "#8e44ad";
+        cCtx.fillText(`มอบให้แก่: คุณ ${playerName}`, 300, 245);
+
+        cCtx.font = "14px Mitr";
+        cCtx.fillStyle = "#7f8c8d";
+        cCtx.fillText(`ระดับวิเคราะห์ขั้นสูงสุด: ${levelRank}  |  คะแนนรวม: ${score} คะแนน`, 300, 280);
+
+        cCtx.font = "bold 14px Mitr";
+        cCtx.fillStyle = "#16a085";
+        cCtx.fillText(`ทำผลงานสำเร็จเป็นระบบแถวหน้า [ รุ่นที่ ${generationNo} ปีการศึกษา ${academicYear} ]`, 300, 315);
+
+        cCtx.font = "italic 13px Mitr";
+        cCtx.fillStyle = "#2c3e50";
+        cCtx.fillText(`ผ่านภารกิจเมื่อวันที่ ${currentDay} เดือน ${currentMonth} พ.ศ. ${currentYearBE}`, 300, 350);
+
+        cCtx.font = "bold 13px Mitr";
+        cCtx.fillStyle = "#8e44ad";
+        cCtx.fillText("เกียรติบัตรนี้ออกโดย ครูรสสุคนธ์ อุทัยภัทรกุล", 300, 390);
+    }
+
+    function downloadCertificate() {
+        const certCanvas = document.getElementById("certificate-canvas");
+        const link = document.createElement('a');
+        link.download = `ใบประกาศ_${playerName}_นักสืบถิ่นเซนต์โยเซฟบางนา.png`;
+        link.href = certCanvas.toDataURL();
+        link.click();
+    }
+
+    function drawVictoryEffects() {
+        if(gameState !== "victory") return;
+        ctx.fillStyle = "rgba(0,0,0,0.2)";
+        ctx.fillRect(0,0,canvas.width,canvas.height);
+        for(let i=0; i<2; i++) {
+            let px = Math.random() * canvas.width;
+            let py = Math.random() * (canvas.height / 2);
+            ctx.fillStyle = `hsl(${Math.random()*360}, 100%, 50%)`;
+            for(let a=0; a<Math.PI*2; a+=0.5) {
+                ctx.fillRect(px + Math.cos(a)*40, py + Math.sin(a)*40, 5, 5);
+            }
+        }
+    }
+
+    function gameLoop() {
+        update();
+        draw();
+        if(gameState === "victory") {
+            drawVictoryEffects();
+        }
+        requestAnimationFrame(gameLoop);
+    }
+
+    function resizeCanvas() {
+        const container = document.getElementById("game-container");
+        canvas.width = container.clientWidth || 1024;
+        canvas.height = container.clientHeight || 768;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+</script>
+</body>
+</html>
